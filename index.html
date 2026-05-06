@@ -393,18 +393,32 @@ function renderEntries(){
     list.innerHTML=entries.map(function(e,i){
       var cls='ecard'+(e.suggested?' suggested':'');
       if(e.suggested&&e.editing){
-        var mlines=e.meetings&&e.meetings.length?'<div class="emeta" style="margin-bottom:8px;line-height:1.8;font-size:12px;color:#999">'+e.meetings.join('<br>')+'</div>':'';
-        var reassignHtml='';
-        if(e.isOther){
-          // Build project options grouped: matched projects first, then all others
+        if(e.isOther && e.meetings && e.meetings.length){
+          // Per-meeting reassignment rows
           var usedProjs=getUsed();
           var projList=ALL_LOADED_PROJECTS.length?ALL_LOADED_PROJECTS:ALL_PROJECTS.map(function(p){return p.project;});
-          var opts=projList.filter(function(p){return p!=='Other Time'&&!usedProjs[p];}).map(function(p){
+          var projOpts='<option value="">Other Time</option>'+projList.filter(function(p){return p!=='Other Time';}).map(function(p){
             return '<option value="'+p+'">'+p+'</option>';
           }).join('');
-          reassignHtml='<div style="margin-bottom:8px"><label style="font-size:12px;color:#888;font-weight:500;display:block;margin-bottom:4px">Reassign to project <span style="font-weight:400;color:#ccc">\u2014 optional</span></label><select id="ereassign_'+i+'" style="font-size:13px;padding:7px 10px;border:1px solid #e0deda;border-radius:8px;width:100%;font-family:inherit;background:#fafaf9"><option value="">Keep as Other Time</option>'+opts+'</select></div>';
+          var meetingRows=e.meetings.map(function(m,mi){
+            // Parse hours from meeting string e.g. "Title (Mon 5/4, 1.5h)"
+            var hrsMatch=m.match(/,\s*([\d.]+)h\)$/);
+            var mhrs=hrsMatch?parseFloat(hrsMatch[1]):0;
+            return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:#fafaf9;border:1px solid #e8e6e1;border-radius:8px">'
+              +'<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m+'</div></div>'
+              +'<select id="ereassign_'+i+'_'+mi+'" style="font-size:12px;padding:5px 8px;border:1px solid #e0deda;border-radius:6px;font-family:inherit;background:#fff;min-width:160px;max-width:200px">'+projOpts+'</select>'
+              +'</div>';
+          }).join('');
+          return '<div class="'+cls+'"><div class="einfo" style="width:100%">'
+            +'<div class="eproj" style="margin-bottom:8px">Other Time<span class="suggbadge">from calendar</span></div>'
+            +'<div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:8px">Assign each meeting to a project</div>'
+            +meetingRows
+            +'<div style="display:flex;gap:8px;margin-top:4px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditingOther('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove all</button></div>'
+            +'</div></div>';
         }
-        return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">'+e.project+'<span class="suggbadge">from calendar</span></div>'+mlines+reassignHtml+'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><label style="font-size:12px;color:#888;font-weight:500;white-space:nowrap">Hours</label><input type="number" value="'+e.hours+'" min="0.5" max="80" step="0.25" style="font-size:14px;padding:6px 10px;border:1px solid #e0deda;border-radius:8px;width:90px;font-family:inherit" id="ehrs_'+i+'"/></div><div style="margin-bottom:8px"><label style="font-size:12px;color:#888;font-weight:500;display:block;margin-bottom:4px">Notes <span style="font-weight:400;color:#ccc">\u2014 optional</span></label><textarea style="font-size:13px;padding:7px 10px;border:1px solid #e0deda;border-radius:8px;width:100%;font-family:inherit;resize:vertical;min-height:52px" id="enotes_'+i+'">'+e.notes+'</textarea></div><div style="display:flex;gap:8px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditing('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove</button></div></div></div>';
+        // Non-Other-Time calendar entry edit view
+        var mlines=e.meetings&&e.meetings.length?'<div class="emeta" style="margin-bottom:8px;line-height:1.8;font-size:12px;color:#999">'+e.meetings.join('<br>')+'</div>':'';
+        return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">'+e.project+'<span class="suggbadge">from calendar</span></div>'+mlines+'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><label style="font-size:12px;color:#888;font-weight:500;white-space:nowrap">Hours</label><input type="number" value="'+e.hours+'" min="0.5" max="80" step="0.25" style="font-size:14px;padding:6px 10px;border:1px solid #e0deda;border-radius:8px;width:90px;font-family:inherit" id="ehrs_'+i+'"/></div><div style="margin-bottom:8px"><label style="font-size:12px;color:#888;font-weight:500;display:block;margin-bottom:4px">Notes <span style="font-weight:400;color:#ccc">\u2014 optional</span></label><textarea style="font-size:13px;padding:7px 10px;border:1px solid #e0deda;border-radius:8px;width:100%;font-family:inherit;resize:vertical;min-height:52px" id="enotes_'+i+'">'+e.notes+'</textarea></div><div style="display:flex;gap:8px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditing('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove</button></div></div></div>';
       }
       if(e.suggested){
         var mc=e.meetings&&e.meetings.length?e.meetings.length+' meeting'+(e.meetings.length>1?'s':''):'';
@@ -422,26 +436,55 @@ function startEditing(i){entries[i].editing=true;renderEntries();}
 function doneEditing(i){
   var hEl=document.getElementById('ehrs_'+i);
   var nEl=document.getElementById('enotes_'+i);
-  var rEl=document.getElementById('ereassign_'+i);
   if(hEl){var h=parseFloat(hEl.value);if(!isNaN(h)&&h>0)entries[i].hours=Math.round(h*4)/4;}
   if(nEl)entries[i].notes=nEl.value;
-  // Handle reassignment
-  if(rEl&&rEl.value){
-    var newProj=rEl.value;
-    // Check if this project already has an entry — if so, add hours to it
-    var existing=-1;
-    entries.forEach(function(e,idx){if(idx!==i&&e.project===newProj)existing=idx;});
-    if(existing!==-1){
-      entries[existing].hours=Math.round((entries[existing].hours+entries[i].hours)*4)/4;
-      if(entries[i].notes) entries[existing].notes=(entries[existing].notes?entries[existing].notes+'; ':'')+entries[i].notes;
-      entries.splice(i,1);
+  entries[i].editing=false;
+  renderEntries();
+}
+
+function doneEditingOther(i){
+  var e=entries[i];
+  if(!e||!e.meetings) return;
+  // Collect per-meeting assignments
+  var toAdd={}; // project -> {hours, meetingLabels[]}
+  var otherHours=0;
+  e.meetings.forEach(function(m,mi){
+    var sel=document.getElementById('ereassign_'+i+'_'+mi);
+    var proj=sel?sel.value:'';
+    var hrsMatch=m.match(/,\s*([\d.]+)h\)$/);
+    var mhrs=hrsMatch?parseFloat(hrsMatch[1]):0;
+    if(proj && proj!=='Other Time'){
+      if(!toAdd[proj]) toAdd[proj]={hours:0,meetings:[]};
+      toAdd[proj].hours+=mhrs;
+      toAdd[proj].meetings.push(m);
     } else {
-      entries[i].project=newProj;
-      entries[i].account=ACCT_MAP[newProj]||'';
-      entries[i].isOther=false;
+      otherHours+=mhrs;
     }
+  });
+  // Remove the Other Time entry
+  entries.splice(i,1);
+  // Add reassigned entries (merge with existing if project already exists)
+  Object.keys(toAdd).forEach(function(proj){
+    var d=toAdd[proj];
+    var hrs=Math.round(d.hours*4)/4;
+    var existing=-1;
+    entries.forEach(function(en,idx){if(en.project===proj)existing=idx;});
+    if(existing!==-1){
+      entries[existing].hours=Math.round((entries[existing].hours+hrs)*4)/4;
+    } else {
+      entries.push({project:proj,account:ACCT_MAP[proj]||'',hours:hrs,notes:d.meetings.join('; '),meetings:d.meetings,suggested:true,editing:false});
+    }
+  });
+  // Re-add Other Time entry if anything remains
+  if(otherHours>0){
+    var remainMeetings=[];
+    e.meetings.forEach(function(m,mi){
+      var sel=document.getElementById('ereassign_'+i+'_'+mi);
+      var proj=sel?sel.value:'';
+      if(!proj||proj==='Other Time') remainMeetings.push(m);
+    });
+    entries.push({project:'Other Time',account:'Internal',hours:Math.round(otherHours*4)/4,notes:'',meetings:remainMeetings,suggested:true,editing:false,isOther:true});
   }
-  if(entries[i]) entries[i].editing=false;
   renderEntries();
 }
 
