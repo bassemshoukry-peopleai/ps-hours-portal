@@ -238,7 +238,7 @@ function switchTab(tab){
 
 function loadLastWeek(){
   lwLoaded=true;
-  fetch(WEBHOOK_URL+'?action=lastweek&owner='+encodeURIComponent(currentOwner))
+  fetch(WEBHOOK_URL,{method:'POST',body:JSON.stringify({action:'lastweek',owner:currentOwner}),headers:{'Content-Type':'application/json'}})
     .then(function(r){return r.json();})
     .then(function(data){
       var el=document.getElementById('lwContent');
