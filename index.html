@@ -348,7 +348,15 @@ function processCal(events){
     if(used[proj]){skipped++;return;}
     var d=projectMap[proj];
     var hrs=Math.round(d.hours*4)/4;
-    var entryNotes = d.isOther ? '' : d.meetings.join('; ');
+    // Build notes: deduplicated meeting titles only, no dates/times
+    var seen={};
+    var dedupedTitles=[];
+    d.meetings.forEach(function(m){
+      // Strip the " (Day M/D, Xh)" suffix to get just the title
+      var title=m.replace(/\s*\([A-Za-z]+\s+\d+\/\d+,\s*[\d.]+h\)$/, '').trim();
+      if(!seen[title]){seen[title]=1;dedupedTitles.push(title);}
+    });
+    var entryNotes = d.isOther ? '' : dedupedTitles.join('; ');
     entries.push({project:proj,account:ACCT_MAP[proj]||'',hours:hrs,notes:entryNotes,meetings:d.meetings,suggested:true,editing:false,isOther:d.isOther});
     added++;
   });
