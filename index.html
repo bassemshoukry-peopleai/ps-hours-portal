@@ -138,44 +138,7 @@
 var WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbx0cj4LYOnKK3CpArTVXGzGSy-ifXHmEjfbpTpomXfUX9n6fLKuycVM_M687mjaFTaE/exec';
 var OAUTH_CLIENT_ID = '790499453006-nu9kbm1jkrmnsipohqv4qeuu97joe4sd.apps.googleusercontent.com';
 
-var KEYWORD_MAP = [
-  {keywords:['ibm','apptio'],project:'IBM - Forensics + Forecasting Global Deployment'},
-  {keywords:['red hat','redhat'],project:'Red Hat - Ongoing TAM Support'},
-  {keywords:['3pillar','3 pillar'],project:'3pillar onboarding'},
-  {keywords:['coveo'],project:'Coveo - Forensics Premium'},
-  {keywords:['cyberark','cyber ark'],project:'Cyberark - Email Migration'},
-  {keywords:['nvidia'],project:'Nvidia - SalesAI POC'},
-  {keywords:['blue yonder','blueyonder'],project:'Blue Yonder - SalesAI Deployment'},
-  {keywords:['manhattan'],project:'Manhattan - New User Onboarding'},
-  {keywords:['iron mountain','ironmountain'],project:'Iron Mountain - Opportunity Matching'},
-  {keywords:['visa'],project:'Visa - Forensics Enterprise'},
-  {keywords:['transunion','trans union'],project:'TransUnion - Forensics'},
-  {keywords:['dhl'],project:'DHL - Consultant Support'},
-  {keywords:['amd'],project:'AMD - SalesAI, Forecasting'},
-  {keywords:['five9','five 9'],project:'Five9 - Re-Engagement Matching Audit'},
-  {keywords:['fictiv'],project:'Fictiv - Forensics and SalesAI'},
-  {keywords:['keysight'],project:'Keysight - Forensics Premium'},
-  {keywords:['dozuki'],project:'Dozuki - Forecasting'},
-  {keywords:['logitech'],project:'Logitech - Matching Assessment'},
-  {keywords:['mitel'],project:'Mitel - Data Foundation, Opp Intel Land'},
-  {keywords:['hexagon'],project:'Hexagon - Email Migration'},
-  {keywords:['verizon'],project:'Verizon - Global Enterprise Expansion'},
-  {keywords:['tanium'],project:'Tanium Forensics Premium'},
-  {keywords:['presidio'],project:'Presidio - Forensics Premium'},
-  {keywords:['zafran'],project:'Zafran - Forecasting'},
-  {keywords:['cast.ai','castai'],project:'Cast.ai Re-Engagement'},
-  {keywords:['intermedia'],project:'Intermedia - Forensics Premium'},
-  {keywords:['forcepoint'],project:'Forcepoint - Gong Questions'},
-  {keywords:['sambatv','samba tv'],project:'SambaTV - Post Onboarding Support'},
-  {keywords:['eis'],project:'EIS - SalesAI Scorecard Assist'},
-  {keywords:['hpi','hp '],project:'HPi - Forensics Enterprise - Onboarding'},
-  {keywords:['dbt'],project:'DBT - Forensics Premium'},
-  {keywords:['6sense','6 sense'],project:'6Sense - Account Execution (Premium)'},
-  {keywords:['windward'],project:'Windward Consulting Forensics + Opp Management'},
-  {keywords:['openai','open ai'],project:'OpenAi - MCP'},
-  {keywords:['clarify'],project:'Clarify PeopleGlass Enterprise'},
-  {keywords:['cyberhaven'],project:'Cyberhaven - Partner Matching Reengagement'}
-];
+var ALL_LOADED_PROJECTS = []; // loaded from sheet on init
 
 var PERSON_PROJECTS = {
   "Kaisha Fox": ["AMD - SalesAI, Forecasting","Presidio - Forensics Premium","DHL - Consultant Support","TransUnion - Forensics","Transunion - Forecasting","Visa - Forensics Enterprise","Iron Mountain - Opportunity Matching","Other Time","OpenAi - MCP","AMD Data Foundation Rollout","Five9 - Re-Engagement Matching Audit","Iron Mountain - Forecasting","Cyberark - Email Migration","AMD - Custom Title","Zafran - Forecasting","Coveo - Forensics Premium","Cyberhaven - Partner Matching Reengagement","Clarify PeopleGlass Enterprise","Nvidia - SalesAI POC","Forcepoint - Gong Questions","SambaTV - Post Onboarding Support","Blue Yonder - Training Project"],
@@ -193,7 +156,7 @@ var ACCT_MAP = {};
 ALL_PROJECTS.forEach(function(p){ACCT_MAP[p.project]=p.account;});
 var HAS_TRACKER = {"Kaisha Fox":1,"Eric Alley":1,"Frank Shawn":1,"Williams Santana":1,"Justin Monell":1,"Brianna Buck":1,"Jenna Desiderio":1,"Stephen":1,"Bassem Shoukry":1};
 
-var entries=[], addOpen=false, lwLoaded=false, currentOwner='', calToken=null;
+var entries=[], addOpen=false, lwLoaded=false, currentOwner='', calToken=sessionStorage.getItem('calToken')||null;
 
 function getMonday(d){var dt=new Date(d),day=dt.getDay();dt.setDate(dt.getDate()-day+(day===0?-6:1));return dt;}
 function fmtD(d){return(d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(-2);}
@@ -202,6 +165,12 @@ function fmtISO(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'
 var _mon=getMonday(new Date());
 document.getElementById('weekDate').value=fmtISO(_mon);
 document.getElementById('wbadge').textContent='Week of '+fmtD(_mon);
+
+// Load full project list from sheet
+fetch(WEBHOOK_URL+'?action=projects')
+  .then(function(r){return r.json();})
+  .then(function(data){ if(data.projects) ALL_LOADED_PROJECTS=data.projects; })
+  .catch(function(){});
 
 function updateBadge(){
   var v=document.getElementById('weekDate').value;
@@ -271,6 +240,7 @@ function loadCalendar(){
           showStatus('Sign-in failed: '+response.error,'err'); return;
         }
         calToken=response.access_token;
+        sessionStorage.setItem('calToken',calToken);
         fetchCalendarEvents(rawDate,btn);
       }
     });
@@ -288,7 +258,7 @@ function fetchCalendarEvents(rawDate,btn){
     +'&singleEvents=true&orderBy=startTime&maxResults=100';
   fetch(url,{headers:{'Authorization':'Bearer '+calToken}})
     .then(function(r){
-      if(r.status===401){calToken=null;btn.disabled=false;btn.textContent='\uD83D\uDCC5 Suggest from calendar';showStatus('Session expired — please click again.','warn');return null;}
+      if(r.status===401){calToken=null;sessionStorage.removeItem('calToken');btn.disabled=false;btn.textContent='\uD83D\uDCC5 Suggest from calendar';showStatus('Session expired — please click again.','warn');return null;}
       return r.json();
     })
     .then(function(data){
@@ -302,7 +272,38 @@ function fetchCalendarEvents(rawDate,btn){
     });
 }
 
+// Smart fuzzy match: score meeting title against project name using word overlap
+function matchProject(titleLow, projects) {
+  // Tokenize: split on spaces, dashes, slashes, dots, plus
+  function tokens(s) {
+    return s.toLowerCase().replace(/[-\/\.+,&]/g,' ').split(/\s+/).filter(function(t){return t.length>1;});
+  }
+  // Stop words to ignore
+  var stop = {the:1,and:1,for:1,with:1,from:1,this:1,that:1,call:1,sync:1,meeting:1,
+              weekly:1,monthly:1,daily:1,check:1,prep:1,review:1,update:1,catch:1,
+              internal:1,int:1,team:1,office:1,hours:1,session:1,discussion:1};
+  var titleTokens = tokens(titleLow).filter(function(t){return !stop[t];});
+  if(!titleTokens.length) return null;
+  var best=null, bestScore=0;
+  projects.forEach(function(proj){
+    var projTokens = tokens(proj).filter(function(t){return !stop[t];});
+    var matches=0;
+    titleTokens.forEach(function(tt){
+      projTokens.forEach(function(pt){
+        // exact token match or one contains the other (min 3 chars)
+        if(tt===pt || (tt.length>=3 && pt.indexOf(tt)!==-1) || (pt.length>=3 && tt.indexOf(pt)!==-1)) matches++;
+      });
+    });
+    // Score = matches / max(titleTokens, projTokens) — penalize very short matches
+    var score = matches / Math.max(titleTokens.length, projTokens.length);
+    if(score>bestScore && matches>=1) { bestScore=score; best=proj; }
+  });
+  // Require at least 0.2 score to avoid weak matches
+  return bestScore>=0.2 ? best : null;
+}
+
 function processCal(events){
+  var projects = ALL_LOADED_PROJECTS.length ? ALL_LOADED_PROJECTS : ALL_PROJECTS.map(function(p){return p.project;});
   var projectMap={};
   events.forEach(function(ev){
     if(!ev.start||!ev.start.dateTime)return;
@@ -317,16 +318,10 @@ function processCal(events){
     var hrs=Math.round((mins/60)*4)/4;
     var title=ev.summary||'(no title)';
     var titleLow=title.toLowerCase();
-    var matched=null;
-    for(var k=0;k<KEYWORD_MAP.length;k++){
-      var entry=KEYWORD_MAP[k];
-      for(var j=0;j<entry.keywords.length;j++){
-        if(titleLow.indexOf(entry.keywords[j])!==-1){matched=entry.project;break;}
-      }
-      if(matched)break;
-    }
+    var matched=matchProject(titleLow, projects);
     if(!matched)matched='Other Time';
-    if(!projectMap[matched])projectMap[matched]={hours:0,meetings:[]};
+    if(!projectMap[matched])projectMap[matched]={hours:0,meetings:[],isOther:false};
+    if(matched==='Other Time') projectMap[matched].isOther=true;
     projectMap[matched].hours+=hrs;
     var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     projectMap[matched].meetings.push(title+' ('+days[start.getDay()]+' '+(start.getMonth()+1)+'/'+start.getDate()+', '+hrs+'h)');
@@ -336,7 +331,8 @@ function processCal(events){
     if(used[proj]){skipped++;return;}
     var d=projectMap[proj];
     var hrs=Math.round(d.hours*4)/4;
-    entries.push({project:proj,account:ACCT_MAP[proj]||'',hours:hrs,notes:d.meetings.join('; '),meetings:d.meetings,suggested:true,editing:false});
+    var entryNotes = d.isOther ? '' : d.meetings.join('; ');
+    entries.push({project:proj,account:ACCT_MAP[proj]||'',hours:hrs,notes:entryNotes,meetings:d.meetings,suggested:true,editing:false,isOther:d.isOther});
     added++;
   });
   renderEntries();
