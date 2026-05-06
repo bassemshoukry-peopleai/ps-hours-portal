@@ -274,32 +274,49 @@ function fetchCalendarEvents(rawDate,btn){
 
 // Smart fuzzy match: score meeting title against project name using word overlap
 function matchProject(titleLow, projects) {
-  // Tokenize: split on spaces, dashes, slashes, dots, plus
-  function tokens(s) {
-    return s.toLowerCase().replace(/[-\/\.+,&]/g,' ').split(/\s+/).filter(function(t){return t.length>1;});
+  function tokenize(s) {
+    return s.toLowerCase().replace(/[-\/+,&.]/g,' ').split(/\s+/).filter(function(t){ return t.length>=3; });
   }
-  // Stop words to ignore
-  var stop = {the:1,and:1,for:1,with:1,from:1,this:1,that:1,call:1,sync:1,meeting:1,
-              weekly:1,monthly:1,daily:1,check:1,prep:1,review:1,update:1,catch:1,
-              internal:1,int:1,team:1,office:1,hours:1,session:1,discussion:1};
-  var titleTokens = tokens(titleLow).filter(function(t){return !stop[t];});
+  // Generic words that appear in project names but shouldn't drive matches
+  var stop = {the:1,and:1,for:1,with:1,from:1,
+              forensics:1,forecasting:1,premium:1,enterprise:1,deployment:1,
+              global:1,support:1,project:1,management:1,assessment:1,
+              reengagement:1,migration:1,onboarding:1,matching:1,salesai:1,
+              data:1,foundation:1,intelligence:1,account:1,ongoing:1,
+              post:1,going:1,consulting:1,opportunity:1,land:1,opp:1,
+              intel:1,signals:1,questions:1,scorecard:1,assist:1,poc:1,
+              service:1,services:1,mcp:1,new:1,user:1};
+
+  var titleTokens = tokenize(titleLow).filter(function(t){ return !stop[t]; });
   if(!titleTokens.length) return null;
-  var best=null, bestScore=0;
+
+  var best = null, bestScore = 0;
+
   projects.forEach(function(proj){
-    var projTokens = tokens(proj).filter(function(t){return !stop[t];});
-    var matches=0;
-    titleTokens.forEach(function(tt){
-      projTokens.forEach(function(pt){
-        // exact token match or one contains the other (min 3 chars)
-        if(tt===pt || (tt.length>=3 && pt.indexOf(tt)!==-1) || (pt.length>=3 && tt.indexOf(pt)!==-1)) matches++;
+    // Only match against the client name part (before first " - ")
+    var clientPart = proj.indexOf(' - ') !== -1 ? proj.split(' - ')[0] : proj;
+    var clientTokens = tokenize(clientPart).filter(function(t){ return !stop[t]; });
+    if(!clientTokens.length) return;
+
+    // Count exact token matches only
+    var matches = 0;
+    clientTokens.forEach(function(ct){
+      titleTokens.forEach(function(tt){
+        if(ct === tt) matches++;
       });
     });
-    // Score = matches / max(titleTokens, projTokens) — penalize very short matches
-    var score = matches / Math.max(titleTokens.length, projTokens.length);
-    if(score>bestScore && matches>=1) { bestScore=score; best=proj; }
+    if(matches === 0) return;
+
+    // For 1-2 token client names, ALL tokens must match (strict)
+    // For longer names, require 60% match
+    var required = clientTokens.length <= 2 ? clientTokens.length : Math.ceil(clientTokens.length * 0.6);
+    if(matches < required) return;
+
+    var score = matches / clientTokens.length;
+    if(score > bestScore) { bestScore = score; best = proj; }
   });
-  // Require at least 0.2 score to avoid weak matches
-  return bestScore>=0.2 ? best : null;
+
+  return best;
 }
 
 function processCal(events){
