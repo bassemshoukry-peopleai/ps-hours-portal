@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PS Hours — People.ai</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:#f5f4f1;min-height:100vh;padding:2rem 1rem}
+  .wrap{max-width:640px;margin:0 auto}
+  .logo{display:flex;align-items:center;gap:10px;margin-bottom:2rem}
+  .logo-mark{width:28px;height:28px;background:#ff4d00;border-radius:6px;display:flex;align-items:center;justify-content:center}
+  .logo-mark svg{width:16px;height:16px;fill:white}
+  .logo-name{font-size:15px;font-weight:500;color:#1a1a1a}
+  .logo-sub{font-size:13px;color:#888;margin-left:4px}
+  h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
+  .subtitle{font-size:14px;color:#888;margin-bottom:2rem}
+  .wbadge{display:inline-block;font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;background:#fff3ee;color:#ff4d00;border:1px solid #ffd5c2;margin-left:8px;vertical-align:middle}
+  .card{background:#fff;border:1px solid #e8e6e1;border-radius:14px;padding:1.5rem;margin-bottom:1rem}
+  .slabel{font-size:11px;font-weight:500;letter-spacing:.07em;color:#aaa;text-transform:uppercase;margin-bottom:.875rem}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .rowfull{margin-bottom:12px}
+  .fld{display:flex;flex-direction:column;gap:5px}
+  .fld label{font-size:12px;color:#888;font-weight:500}
+  .fld input,.fld select,.fld textarea{font-size:14px;padding:9px 11px;border:1px solid #e0deda;border-radius:8px;background:#fafaf9;color:#1a1a1a;width:100%;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s}
+  .fld input:focus,.fld select:focus,.fld textarea:focus{border-color:#ff4d00;background:#fff}
+  .fld textarea{resize:vertical;min-height:60px;line-height:1.5}
+  .ecard{background:#fafaf9;border:1px solid #e8e6e1;border-radius:10px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:flex-start;gap:12px}
+  .ecard.suggested{border-color:#ffd5c2;background:#fff8f5}
+  .einfo{flex:1;min-width:0}
+  .eproj{font-size:14px;font-weight:500;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .emeta{font-size:12px;color:#999;margin-top:2px}
+  .enotes{font-size:12px;color:#bbb;margin-top:3px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ehrs{font-size:22px;font-weight:500;color:#1a1a1a;min-width:52px;text-align:right;line-height:1}
+  .ehrs span{font-size:11px;color:#aaa;font-weight:400}
+  .erm{font-size:18px;cursor:pointer;color:#ccc;background:none;border:none;padding:0 2px;line-height:1;transition:color .1s}
+  .erm:hover{color:#ff4d00}
+  .suggbadge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;background:#fff3ee;color:#ff8c66;border:1px solid #ffd5c2;margin-left:6px;vertical-align:middle}
+  .notebadge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;background:#fff8f5;color:#ff8c66;border:1px solid #ffd5c2;margin-left:6px;vertical-align:middle}
+  .tbar{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:#fafaf9;border-radius:10px;border:1px solid #e8e6e1;margin-bottom:1rem}
+  .tlbl{font-size:13px;color:#888}
+  .thrs{font-size:24px;font-weight:500;color:#1a1a1a}
+  .empty-state{font-size:13px;color:#bbb;text-align:center;padding:1.25rem 0}
+  .btnrow{display:flex;gap:8px;margin-bottom:1rem}
+  .btnadd{flex:1;padding:10px;font-size:14px;font-weight:500;background:none;border:1.5px dashed #d8d5cf;border-radius:10px;color:#aaa;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+  .btnadd:hover{border-color:#ff8c66;color:#ff4d00;background:#fff8f5}
+  .btncal{flex:1;padding:10px;font-size:14px;font-weight:500;background:none;border:1.5px solid #ffd5c2;border-radius:10px;color:#ff8c66;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+  .btncal:hover{background:#fff3ee;border-color:#ff8c66;color:#ff4d00}
+  .btncal:disabled{opacity:.5;cursor:not-allowed}
+  .btnsubmit{width:100%;padding:12px;font-size:15px;font-weight:500;background:#ff4d00;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+  .btnsubmit:hover{opacity:.88}
+  .btnsubmit:disabled{opacity:.4;cursor:not-allowed}
+  .overlay{border:1.5px solid #e0deda;border-radius:12px;padding:1.25rem;margin-bottom:1rem;background:#fff}
+  .oacts{display:flex;gap:8px;margin-top:12px}
+  .btnok{flex:1;padding:9px;font-size:14px;background:#ff4d00;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:500;font-family:'DM Sans',sans-serif}
+  .btnok:hover{opacity:.88}
+  .btncancel{padding:9px 16px;font-size:14px;background:none;border:1px solid #e0deda;border-radius:8px;color:#888;cursor:pointer;font-family:'DM Sans',sans-serif}
+  .status{text-align:center;padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:1rem;line-height:1.5}
+  .s-ok{background:#f0faf5;color:#1a9e5c;border:1px solid #b7e8cf}
+  .s-err{background:#fff5f5;color:#c0392b;border:1px solid #f5c6c6}
+  .s-load{background:#fafaf9;color:#888;border:1px solid #e8e6e1}
+  .s-warn{background:#fffbf0;color:#9a6700;border:1px solid #ffe08a}
+  .hint{font-size:12px;color:#ff8c66;background:#fff8f5;padding:8px 12px;border-radius:8px;border:1px solid #ffd5c2;margin-bottom:1rem}
+  .tabs{display:flex;margin-bottom:1.25rem;border-bottom:2px solid #e8e6e1}
+  .tab{padding:8px 18px;font-size:13px;font-weight:500;color:#aaa;cursor:pointer;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:none;font-family:'DM Sans',sans-serif;transition:all .15s}
+  .tab.active{color:#ff4d00;border-bottom-color:#ff4d00}
+  .tab-pane{display:none}
+  .tab-pane.active{display:block}
+  .lw-row{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;border-radius:8px;margin-bottom:6px;background:#fafaf9;border:1px solid #e8e6e1}
+  .lw-proj{font-size:13px;font-weight:500;color:#1a1a1a}
+  .lw-hrs{font-size:16px;font-weight:500;color:#1a1a1a}
+  .lw-hrs span{font-size:11px;color:#aaa;font-weight:400}
+  .lw-total{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;border-radius:8px;background:#fff3ee;border:1px solid #ffd5c2;margin-top:8px}
+  .lw-loading{font-size:13px;color:#bbb;text-align:center;padding:1.5rem 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">
+    <div class="logo-mark"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5"/></svg></div>
+    <span class="logo-name">People.ai</span><span class="logo-sub">/ PS Hours</span>
+  </div>
+  <h1>Weekly Hours Log <span class="wbadge" id="wbadge"></span></h1>
+  <p class="subtitle">Log your actual hours by project. Submissions write directly to your Tracker tab.</p>
+
+  <div class="card">
+    <div class="slabel">Your info</div>
+    <div class="row2">
+      <div class="fld"><label>Services owner</label>
+        <select id="ownerSel" onchange="onOwnerChange()">
+          <option value="">Select name...</option>
+          <option>Kaisha Fox</option><option>Eric Alley</option><option>Frank Shawn</option>
+          <option>Williams Santana</option><option>Justin Monell</option><option>Brianna Buck</option>
+          <option>Jenna Desiderio</option><option>Stephen</option><option>Bassem Shoukry</option>
+          <option>Andrew Fearon</option><option>Sara Gamble</option><option>Meghan Bridges</option>
+          <option>Greg Tise</option>
+        </select>
+      </div>
+      <div class="fld"><label>Week of</label>
+        <input type="date" id="weekDate" onchange="updateBadge()"/>
+      </div>
+    </div>
+  </div>
+
+  <div id="hintBox" style="display:none"></div>
+
+  <div id="mainSection" style="display:none">
+    <div class="tabs">
+      <button class="tab active" id="tabLog" onclick="switchTab('log')">This week</button>
+      <button class="tab" id="tabLw" onclick="switchTab('lastweek')">Last week</button>
+    </div>
+
+    <div class="tab-pane active" id="paneLog">
+      <div class="slabel" style="font-size:11px;font-weight:500;letter-spacing:.07em;color:#aaa;text-transform:uppercase;margin-bottom:.875rem">Project entries</div>
+      <div id="eList"><p class="empty-state">No entries yet — add manually or import from calendar below.</p></div>
+      <div class="tbar">
+        <span class="tlbl">Total logged this week</span>
+        <span class="thrs" id="totalHrs">0 <span style="font-size:13px;color:#aaa;font-weight:400">hrs</span></span>
+      </div>
+      <div id="addContainer"></div>
+      <div class="btnrow">
+        <button class="btnadd" id="btnAdd" onclick="showAdd()">+ Add manually</button>
+        <button class="btncal" id="btnCal" onclick="loadCalendar()">&#128197; Suggest from calendar</button>
+      </div>
+      <div id="statusMsg" style="display:none"></div>
+      <button class="btnsubmit" id="btnSubmit" onclick="doSubmit()">Submit to Google Sheet</button>
+    </div>
+
+    <div class="tab-pane" id="paneLastWeek">
+      <div id="lwContent" class="lw-loading">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+var WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbx0cj4LYOnKK3CpArTVXGzGSy-ifXHmEjfbpTpomXfUX9n6fLKuycVM_M687mjaFTaE/exec';
+var OAUTH_CLIENT_ID = '790499453006-nu9kbm1jkrmnsipohqv4qeuu97joe4sd.apps.googleusercontent.com';
+
+var KEYWORD_MAP = [
+  {keywords:['ibm','apptio'],project:'IBM - Forensics + Forecasting Global Deployment'},
+  {keywords:['red hat','redhat'],project:'Red Hat - Ongoing TAM Support'},
+  {keywords:['3pillar','3 pillar'],project:'3pillar onboarding'},
+  {keywords:['coveo'],project:'Coveo - Forensics Premium'},
+  {keywords:['cyberark','cyber ark'],project:'Cyberark - Email Migration'},
+  {keywords:['nvidia'],project:'Nvidia - SalesAI POC'},
+  {keywords:['blue yonder','blueyonder'],project:'Blue Yonder - SalesAI Deployment'},
+  {keywords:['manhattan'],project:'Manhattan - New User Onboarding'},
+  {keywords:['iron mountain','ironmountain'],project:'Iron Mountain - Opportunity Matching'},
+  {keywords:['visa'],project:'Visa - Forensics Enterprise'},
+  {keywords:['transunion','trans union'],project:'TransUnion - Forensics'},
+  {keywords:['dhl'],project:'DHL - Consultant Support'},
+  {keywords:['amd'],project:'AMD - SalesAI, Forecasting'},
+  {keywords:['five9','five 9'],project:'Five9 - Re-Engagement Matching Audit'},
+  {keywords:['fictiv'],project:'Fictiv - Forensics and SalesAI'},
+  {keywords:['keysight'],project:'Keysight - Forensics Premium'},
+  {keywords:['dozuki'],project:'Dozuki - Forecasting'},
+  {keywords:['logitech'],project:'Logitech - Matching Assessment'},
+  {keywords:['mitel'],project:'Mitel - Data Foundation, Opp Intel Land'},
+  {keywords:['hexagon'],project:'Hexagon - Email Migration'},
+  {keywords:['verizon'],project:'Verizon - Global Enterprise Expansion'},
+  {keywords:['tanium'],project:'Tanium Forensics Premium'},
+  {keywords:['presidio'],project:'Presidio - Forensics Premium'},
+  {keywords:['zafran'],project:'Zafran - Forecasting'},
+  {keywords:['cast.ai','castai'],project:'Cast.ai Re-Engagement'},
+  {keywords:['intermedia'],project:'Intermedia - Forensics Premium'},
+  {keywords:['forcepoint'],project:'Forcepoint - Gong Questions'},
+  {keywords:['sambatv','samba tv'],project:'SambaTV - Post Onboarding Support'},
+  {keywords:['eis'],project:'EIS - SalesAI Scorecard Assist'},
+  {keywords:['hpi','hp '],project:'HPi - Forensics Enterprise - Onboarding'},
+  {keywords:['dbt'],project:'DBT - Forensics Premium'},
+  {keywords:['6sense','6 sense'],project:'6Sense - Account Execution (Premium)'},
+  {keywords:['windward'],project:'Windward Consulting Forensics + Opp Management'},
+  {keywords:['openai','open ai'],project:'OpenAi - MCP'},
+  {keywords:['clarify'],project:'Clarify PeopleGlass Enterprise'},
+  {keywords:['cyberhaven'],project:'Cyberhaven - Partner Matching Reengagement'}
+];
+
+var PERSON_PROJECTS = {
+  "Kaisha Fox": ["AMD - SalesAI, Forecasting","Presidio - Forensics Premium","DHL - Consultant Support","TransUnion - Forensics","Transunion - Forecasting","Visa - Forensics Enterprise","Iron Mountain - Opportunity Matching","Other Time","OpenAi - MCP","AMD Data Foundation Rollout","Five9 - Re-Engagement Matching Audit","Iron Mountain - Forecasting","Cyberark - Email Migration","AMD - Custom Title","Zafran - Forecasting","Coveo - Forensics Premium","Cyberhaven - Partner Matching Reengagement","Clarify PeopleGlass Enterprise","Nvidia - SalesAI POC","Forcepoint - Gong Questions","SambaTV - Post Onboarding Support","Blue Yonder - Training Project"],
+  "Eric Alley": ["Other Time","DBT - Forensics Premium","Tanium Forensics Premium","Visa - Forensics Enterprise","HPi - Forensics Enterprise - Onboarding","TransUnion - Forensics","Dozuki - Forecasting"],
+  "Frank Shawn": ["AMD - Project Management","DHL - Project Management","Red Hat - Project Management","IRM - Project Management","TransUnion - Project Management","HPi - Project Management 2","IBM - Forensics + Forecasting Global Deployment","Verizon - Global Enterprise Expansion","Other Time"],
+  "Williams Santana": ["Red Hat - Project Management","Other Time","Mitel - Data Foundation, Opp Intel Land","IBM - Forensics + Forecasting Global Deployment","Verizon - Global Enterprise Expansion","Fictiv - Forensics and SalesAI","Hexagon - Email Migration","Manhattan - New User Onboarding"],
+  "Justin Monell": ["Coveo - Forensics Premium","IBM - Forensics + Forecasting Global Deployment","Cyberark - Email Migration","Other Time","Cast.ai Re-Engagement","Nvidia - SalesAI POC","Coveo Post Onboarding Support","Keysight - Forensics Premium","Dozuki - Forecasting","3pillar onboarding","Blue Yonder - SalesAI Deployment","6Sense - Account Execution (Premium)","SambaTV - Post Onboarding Support","Forcepoint - Gong Questions","Manhattan - New User Onboarding"],
+  "Brianna Buck": ["Other Time","Fictiv - Forensics and SalesAI","EIS - SalesAI Scorecard Assist","Five9 - Re-Engagement Matching Assessment","Intermedia - Forensics Premium","3pillar onboarding","Forcepoint - Gong Questions"],
+  "Jenna Desiderio": ["Other Time","Logitech - Matching Assessment","IBM - Forensics + Forecasting Global Deployment","Windward Consulting Forensics + Opp Management"],
+  "Stephen": ["Other Time"],
+  "Bassem Shoukry": ["Other Time","Red Hat - Ongoing TAM Support","Red Hat - On Going Consulting","Red Hat - Forecasting Deployment","Red Hat SalesAI","IBM - Forensics + Forecasting Global Deployment","IBM - Forecasting - TAM","3pillar onboarding"]
+};
+var ALL_PROJECTS = [{"project":"3pillar onboarding","account":"3Pillar Global"},{"project":"6Sense - Account Execution (Premium)","account":"6sense"},{"project":"AMD - SalesAI, Forecasting","account":"AMD"},{"project":"AMD - Project Management","account":"AMD"},{"project":"AMD Data Foundation Rollout","account":"AMD"},{"project":"AMD - Custom Title","account":"AMD"},{"project":"Blue Yonder - SalesAI Deployment","account":"Blue Yonder"},{"project":"Blue Yonder - Training Project","account":"Blue Yonder"},{"project":"Cast.ai Re-Engagement","account":"Cast AI"},{"project":"Clarify PeopleGlass Enterprise","account":"Clarify B2B"},{"project":"Coveo - Forensics Premium","account":"Coveo"},{"project":"Coveo Post Onboarding Support","account":"Coveo"},{"project":"Cyberhaven - Partner Matching Reengagement","account":"Cyberhaven"},{"project":"Cyberark - Email Migration","account":"CyberArk"},{"project":"DBT - Forensics Premium","account":"dbt Labs"},{"project":"DHL - Consultant Support","account":"DHL"},{"project":"DHL - Forensics Enterprise","account":"DHL"},{"project":"DHL - Project Management","account":"DHL"},{"project":"Dozuki - Forecasting","account":"Dozuki"},{"project":"EIS - SalesAI Scorecard Assist","account":"EIS"},{"project":"Fictiv - Forensics and SalesAI","account":"Fictiv"},{"project":"Five9 - Re-Engagement Matching Assessment","account":"Five9"},{"project":"Five9 - Re-Engagement Matching Audit","account":"Five9"},{"project":"Forcepoint - Gong Questions","account":"Forcepoint"},{"project":"Hexagon - Email Migration","account":"Hexagon"},{"project":"HPE - Forensics Premium","account":"HPE"},{"project":"HPi - Forensics Enterprise - Onboarding","account":"HP"},{"project":"HPi - Project Management 2","account":"HP"},{"project":"IBM - Forecasting - TAM","account":"IBM"},{"project":"IBM - Forensics + Forecasting Global Deployment","account":"IBM"},{"project":"IBM - Forensics POC","account":"IBM"},{"project":"Intermedia - Forensics Premium","account":"Intermedia"},{"project":"IRM - Project Management","account":"Iron Mountain"},{"project":"Iron Mountain - Forecasting","account":"Iron Mountain"},{"project":"Iron Mountain - Opportunity Matching","account":"Iron Mountain"},{"project":"Keysight - Forensics Premium","account":"Keysight"},{"project":"Logitech - Matching Assessment","account":"Logitech"},{"project":"Manhattan - New User Onboarding","account":"Manhattan Associates"},{"project":"MCP Champions","account":"Internal"},{"project":"Mitel - Data Foundation, Opp Intel Land","account":"Mitel"},{"project":"Nvidia - SalesAI POC","account":"NVIDIA"},{"project":"OpenAi - MCP","account":"OpenAI"},{"project":"Other Time","account":"Internal"},{"project":"Presidio - Forensics Premium","account":"Presidio"},{"project":"Red Hat - Ongoing TAM Support","account":"Red Hat"},{"project":"Red Hat - On Going Consulting","account":"Red Hat"},{"project":"Red Hat - Forecasting Deployment","account":"Red Hat"},{"project":"Red Hat - Project Management","account":"Red Hat"},{"project":"Red Hat SalesAI","account":"Red Hat"},{"project":"SambaTV - Post Onboarding Support","account":"Samba TV"},{"project":"Tanium Forensics Premium","account":"Tanium"},{"project":"TransUnion - Forensics","account":"TransUnion"},{"project":"TransUnion - Project Management","account":"TransUnion"},{"project":"Transunion - Forecasting","account":"TransUnion"},{"project":"Verizon - Global Enterprise Expansion","account":"Verizon"},{"project":"Visa - Forensics Enterprise","account":"Visa"},{"project":"Windward Consulting Forensics + Opp Management","account":"Windward Consulting"},{"project":"Zafran - Forecasting","account":"Zafran Security"}];
+var ACCT_MAP = {};
+ALL_PROJECTS.forEach(function(p){ACCT_MAP[p.project]=p.account;});
+var HAS_TRACKER = {"Kaisha Fox":1,"Eric Alley":1,"Frank Shawn":1,"Williams Santana":1,"Justin Monell":1,"Brianna Buck":1,"Jenna Desiderio":1,"Stephen":1,"Bassem Shoukry":1};
+
+var entries=[], addOpen=false, lwLoaded=false, currentOwner='', calToken=null;
+
+function getMonday(d){var dt=new Date(d),day=dt.getDay();dt.setDate(dt.getDate()-day+(day===0?-6:1));return dt;}
+function fmtD(d){return(d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(-2);}
+function fmtISO(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
+
+var _mon=getMonday(new Date());
+document.getElementById('weekDate').value=fmtISO(_mon);
+document.getElementById('wbadge').textContent='Week of '+fmtD(_mon);
+
+function updateBadge(){
+  var v=document.getElementById('weekDate').value;
+  if(!v)return;
+  document.getElementById('wbadge').textContent='Week of '+fmtD(getMonday(new Date(v+'T12:00:00')));
+}
+
+function onOwnerChange(){
+  var owner=document.getElementById('ownerSel').value;
+  currentOwner=owner; entries=[]; addOpen=false; lwLoaded=false;
+  document.getElementById('addContainer').innerHTML='';
+  document.getElementById('btnAdd').style.display='block';
+  document.getElementById('statusMsg').style.display='none';
+  document.getElementById('lwContent').innerHTML='<div class="lw-loading">Loading...</div>';
+  renderEntries();
+  var hb=document.getElementById('hintBox');
+  hb.style.display='none'; hb.innerHTML='';
+  if(owner&&!HAS_TRACKER[owner]){
+    hb.className='hint';
+    hb.textContent=owner+" doesn't have a Tracker tab yet — contact Bassem or Greg.";
+    hb.style.display='block';
+  }
+  document.getElementById('mainSection').style.display=owner?'block':'none';
+  if(owner) switchTab('log');
+}
+
+function switchTab(tab){
+  document.getElementById('tabLog').classList.toggle('active',tab==='log');
+  document.getElementById('tabLw').classList.toggle('active',tab==='lastweek');
+  document.getElementById('paneLog').classList.toggle('active',tab==='log');
+  document.getElementById('paneLastWeek').classList.toggle('active',tab==='lastweek');
+  if(tab==='lastweek'&&!lwLoaded&&currentOwner) loadLastWeek();
+}
+
+function loadLastWeek(){
+  lwLoaded=true;
+  fetch(WEBHOOK_URL+'?action=lastweek&owner='+encodeURIComponent(currentOwner))
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var el=document.getElementById('lwContent');
+      if(data.error){el.innerHTML='<div class="lw-loading">'+data.error+'</div>';return;}
+      if(!data.rows||!data.rows.length){el.innerHTML='<div class="lw-loading">No hours logged for week of '+(data.weekLabel||'last week')+'.</div>';return;}
+      var total=data.rows.reduce(function(s,r){return s+Number(r.hours);},0);
+      var html='<div class="slabel" style="font-size:11px;font-weight:500;letter-spacing:.07em;color:#aaa;text-transform:uppercase;margin-bottom:.875rem">Week of '+data.weekLabel+'</div>';
+      data.rows.forEach(function(r){html+='<div class="lw-row"><span class="lw-proj">'+r.project+'</span><span class="lw-hrs">'+r.hours+' <span>hrs</span></span></div>';});
+      html+='<div class="lw-total"><span style="font-size:13px;color:#ff4d00;font-weight:500">Total</span><span class="lw-hrs">'+total+' <span>hrs</span></span></div>';
+      el.innerHTML=html;
+    })
+    .catch(function(err){document.getElementById('lwContent').innerHTML='<div class="lw-loading">Failed to load.</div>';});
+}
+
+function loadCalendar(){
+  if(!currentOwner){alert('Please select your name first.');return;}
+  var rawDate=document.getElementById('weekDate').value;
+  if(!rawDate){alert('Please select a week first.');return;}
+  var btn=document.getElementById('btnCal');
+  btn.disabled=true; btn.textContent='Connecting to Google...';
+  if(calToken){
+    fetchCalendarEvents(rawDate,btn);
+  } else {
+    var client=google.accounts.oauth2.initTokenClient({
+      client_id:OAUTH_CLIENT_ID,
+      scope:'https://www.googleapis.com/auth/calendar.readonly',
+      callback:function(response){
+        if(response.error){
+          btn.disabled=false; btn.textContent='\uD83D\uDCC5 Suggest from calendar';
+          showStatus('Sign-in failed: '+response.error,'err'); return;
+        }
+        calToken=response.access_token;
+        fetchCalendarEvents(rawDate,btn);
+      }
+    });
+    client.requestAccessToken();
+  }
+}
+
+function fetchCalendarEvents(rawDate,btn){
+  btn.textContent='Reading calendar...';
+  var monday=getMonday(new Date(rawDate+'T12:00:00'));
+  var friday=new Date(monday); friday.setDate(monday.getDate()+5);
+  var url='https://www.googleapis.com/calendar/v3/calendars/primary/events'
+    +'?timeMin='+encodeURIComponent(monday.toISOString())
+    +'&timeMax='+encodeURIComponent(friday.toISOString())
+    +'&singleEvents=true&orderBy=startTime&maxResults=100';
+  fetch(url,{headers:{'Authorization':'Bearer '+calToken}})
+    .then(function(r){
+      if(r.status===401){calToken=null;btn.disabled=false;btn.textContent='\uD83D\uDCC5 Suggest from calendar';showStatus('Session expired — please click again.','warn');return null;}
+      return r.json();
+    })
+    .then(function(data){
+      if(!data)return;
+      btn.disabled=false; btn.textContent='\uD83D\uDCC5 Suggest from calendar';
+      processCal(data.items||[]);
+    })
+    .catch(function(err){
+      btn.disabled=false; btn.textContent='\uD83D\uDCC5 Suggest from calendar';
+      showStatus('Calendar error: '+err.message,'err');
+    });
+}
+
+function processCal(events){
+  var projectMap={};
+  events.forEach(function(ev){
+    if(!ev.start||!ev.start.dateTime)return;
+    if(ev.attendees){
+      for(var i=0;i<ev.attendees.length;i++){
+        if(ev.attendees[i].self&&ev.attendees[i].responseStatus==='declined')return;
+      }
+    }
+    var start=new Date(ev.start.dateTime),end=new Date(ev.end.dateTime);
+    var mins=(end-start)/60000;
+    if(mins<5)return;
+    var hrs=Math.round((mins/60)*4)/4;
+    var title=ev.summary||'(no title)';
+    var titleLow=title.toLowerCase();
+    var matched=null;
+    for(var k=0;k<KEYWORD_MAP.length;k++){
+      var entry=KEYWORD_MAP[k];
+      for(var j=0;j<entry.keywords.length;j++){
+        if(titleLow.indexOf(entry.keywords[j])!==-1){matched=entry.project;break;}
+      }
+      if(matched)break;
+    }
+    if(!matched)matched='Other Time';
+    if(!projectMap[matched])projectMap[matched]={hours:0,meetings:[]};
+    projectMap[matched].hours+=hrs;
+    var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    projectMap[matched].meetings.push(title+' ('+days[start.getDay()]+' '+(start.getMonth()+1)+'/'+start.getDate()+', '+hrs+'h)');
+  });
+  var used=getUsed(),added=0,skipped=0;
+  Object.keys(projectMap).forEach(function(proj){
+    if(used[proj]){skipped++;return;}
+    var d=projectMap[proj];
+    var hrs=Math.round(d.hours*4)/4;
+    entries.push({project:proj,account:ACCT_MAP[proj]||'',hours:hrs,notes:d.meetings.join('; '),meetings:d.meetings,suggested:true,editing:false});
+    added++;
+  });
+  renderEntries();
+  if(added===0&&skipped===0)showStatus('No meetings found for this week.','warn');
+  else if(added===0)showStatus('All suggested projects already added.','warn');
+  else showStatus('Added '+added+' suggestion'+(added>1?'s':'')+' from calendar. Tap each to review.','ok');
+}
+
+function getUsed(){var s={};entries.forEach(function(e){s[e.project]=1;});return s;}
+
+function showAdd(){
+  if(addOpen)return; addOpen=true;
+  document.getElementById('btnAdd').style.display='none';
+  var owner=currentOwner,mine=PERSON_PROJECTS[owner]||[],others=[],used=getUsed();
+  var mineSet={};mine.forEach(function(p){mineSet[p]=1;});
+  ALL_PROJECTS.forEach(function(p){if(!mineSet[p.project])others.push(p);});
+  var myOpts=mine.map(function(p){return '<option value="'+p+'"'+(used[p]?' disabled':'')+'>'+p+(used[p]?' (added)':'')+'</option>';}).join('');
+  var otherOpts=others.map(function(p){return '<option value="'+p.project+'"'+(used[p.project]?' disabled':'')+'>'+p.project+(used[p.project]?' (added)':'')+'</option>';}).join('');
+  document.getElementById('addContainer').innerHTML='<div class="overlay"><div class="slabel" style="font-size:11px;font-weight:500;letter-spacing:.07em;color:#aaa;text-transform:uppercase;margin-bottom:.875rem">New entry</div><div class="rowfull"><div class="fld"><label>Project</label><select id="newProj"><option value="">Select a project...</option>'+(mine.length?'<optgroup label="\u2014 Your projects \u2014">'+myOpts+'</optgroup>':'')+'<optgroup label="\u2014 All other projects \u2014">'+otherOpts+'</optgroup></select></div></div><div class="rowfull"><div class="fld"><label>Actual hours</label><input type="number" id="newHrs" placeholder="e.g. 4.5" min="0.5" max="80" step="0.5"/></div></div><div class="rowfull"><div class="fld"><label>Notes <span style="font-size:11px;color:#ccc;font-weight:400">\u2014 optional</span></label><textarea id="newNotes" placeholder="What did you work on?"></textarea></div></div><div class="oacts"><button class="btnok" onclick="addEntry()">Add entry</button><button class="btncancel" onclick="hideAdd()">Cancel</button></div></div>';
+}
+
+function hideAdd(){addOpen=false;document.getElementById('addContainer').innerHTML='';document.getElementById('btnAdd').style.display='block';}
+
+function addEntry(){
+  var proj=document.getElementById('newProj').value;
+  var hrs=parseFloat(document.getElementById('newHrs').value);
+  var notes=document.getElementById('newNotes').value.trim();
+  if(!proj){alert('Please select a project.');return;}
+  if(getUsed()[proj]){alert('Already added.');return;}
+  if(isNaN(hrs)||hrs<=0){alert('Please enter valid hours.');return;}
+  entries.push({project:proj,account:ACCT_MAP[proj]||'',hours:hrs,notes:notes});
+  hideAdd(); renderEntries();
+}
+
+function removeEntry(i){entries.splice(i,1);renderEntries();}
+
+function renderEntries(){
+  var list=document.getElementById('eList');
+  if(!entries.length){list.innerHTML='<p class="empty-state">No entries yet — add manually or import from calendar below.</p>';}
+  else{
+    list.innerHTML=entries.map(function(e,i){
+      var cls='ecard'+(e.suggested?' suggested':'');
+      if(e.suggested&&e.editing){
+        var mlines=e.meetings&&e.meetings.length?'<div class="emeta" style="margin-bottom:8px;line-height:1.8">'+e.meetings.join('<br>')+'</div>':'';
+        return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">'+e.project+'<span class="suggbadge">from calendar</span></div>'+mlines+'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><label style="font-size:12px;color:#888;font-weight:500;white-space:nowrap">Hours</label><input type="number" value="'+e.hours+'" min="0.5" max="80" step="0.25" style="font-size:14px;padding:6px 10px;border:1px solid #e0deda;border-radius:8px;width:90px;font-family:inherit" id="ehrs_'+i+'"/></div><div style="margin-bottom:8px"><label style="font-size:12px;color:#888;font-weight:500;display:block;margin-bottom:4px">Notes <span style="font-weight:400;color:#ccc">\u2014 optional</span></label><textarea style="font-size:13px;padding:7px 10px;border:1px solid #e0deda;border-radius:8px;width:100%;font-family:inherit;resize:vertical;min-height:52px" id="enotes_'+i+'">'+e.notes+'</textarea></div><div style="display:flex;gap:8px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditing('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove</button></div></div></div>';
+      }
+      if(e.suggested){
+        var mc=e.meetings&&e.meetings.length?e.meetings.length+' meeting'+(e.meetings.length>1?'s':''):'';
+        return '<div class="'+cls+'" style="cursor:pointer" onclick="startEditing('+i+')"><div class="einfo"><div class="eproj">'+e.project+'<span class="suggbadge">from calendar</span></div><div class="emeta">'+mc+' \u2014 tap to review &amp; edit</div></div><div class="ehrs">'+e.hours+'<br><span>hrs</span></div><button class="erm" onclick="event.stopPropagation();removeEntry('+i+')" title="Remove">\xD7</button></div>';
+      }
+      var nb=e.notes?'<span class="notebadge">note</span>':'';
+      return '<div class="'+cls+'"><div class="einfo"><div class="eproj">'+e.project+nb+'</div><div class="emeta">'+(ACCT_MAP[e.project]||'')+'</div>'+(e.notes?'<div class="enotes">'+e.notes+'</div>':'')+  '</div><div class="ehrs">'+e.hours+'<br><span>hrs</span></div><button class="erm" onclick="removeEntry('+i+')" title="Remove">\xD7</button></div>';
+    }).join('');
+  }
+  var total=entries.reduce(function(s,e){return s+e.hours;},0);
+  document.getElementById('totalHrs').innerHTML=total+'<span style="font-size:13px;color:#aaa;font-weight:400"> hrs</span>';
+}
+
+function startEditing(i){entries[i].editing=true;renderEntries();}
+function doneEditing(i){
+  var hEl=document.getElementById('ehrs_'+i),nEl=document.getElementById('enotes_'+i);
+  if(hEl){var h=parseFloat(hEl.value);if(!isNaN(h)&&h>0)entries[i].hours=Math.round(h*4)/4;}
+  if(nEl)entries[i].notes=nEl.value;
+  entries[i].editing=false; renderEntries();
+}
+
+function doSubmit(){
+  var owner=document.getElementById('ownerSel').value;
+  if(!owner){alert('Please select your name.');return;}
+  if(!entries.length){alert('Please add at least one entry.');return;}
+  var rawDate=document.getElementById('weekDate').value;
+  var weekISO=fmtISO(getMonday(new Date(rawDate+'T12:00:00')));
+  var btn=document.getElementById('btnSubmit');
+  btn.disabled=true; btn.textContent='Submitting...';
+  showStatus('Writing to Google Sheet...','load');
+  var payload={entries:entries.map(function(e){return{project:e.project,account:e.account,owner:owner,weekISO:weekISO,hours:e.hours,notes:e.notes||''};})};
+  fetch(WEBHOOK_URL,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}})
+    .then(function(r){return r.json();})
+    .then(function(result){
+      if(result.status===200){
+        showStatus('\u2713 '+result.message+' Week of '+fmtD(getMonday(new Date(rawDate+'T12:00:00')))+', logged for '+owner+'.','ok');
+        entries=[]; lwLoaded=false; renderEntries(); btn.textContent='Submit another week';
+      } else{showStatus('Partial: '+result.message,'err');btn.textContent='Retry';}
+      btn.disabled=false;
+    })
+    .catch(function(err){showStatus('Submission failed: '+err.message,'err');btn.textContent='Retry';btn.disabled=false;});
+}
+
+function showStatus(msg,type){
+  var el=document.getElementById('statusMsg');
+  el.className='status s-'+type; el.textContent=msg; el.style.display='block';
+  if(type==='ok')setTimeout(function(){el.style.display='none';},10000);
+}
+</script>
+</body>
+</html>
