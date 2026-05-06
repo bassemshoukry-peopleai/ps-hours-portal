@@ -393,8 +393,18 @@ function renderEntries(){
     list.innerHTML=entries.map(function(e,i){
       var cls='ecard'+(e.suggested?' suggested':'');
       if(e.suggested&&e.editing){
-        var mlines=e.meetings&&e.meetings.length?'<div class="emeta" style="margin-bottom:8px;line-height:1.8">'+e.meetings.join('<br>')+'</div>':'';
-        return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">'+e.project+'<span class="suggbadge">from calendar</span></div>'+mlines+'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><label style="font-size:12px;color:#888;font-weight:500;white-space:nowrap">Hours</label><input type="number" value="'+e.hours+'" min="0.5" max="80" step="0.25" style="font-size:14px;padding:6px 10px;border:1px solid #e0deda;border-radius:8px;width:90px;font-family:inherit" id="ehrs_'+i+'"/></div><div style="margin-bottom:8px"><label style="font-size:12px;color:#888;font-weight:500;display:block;margin-bottom:4px">Notes <span style="font-weight:400;color:#ccc">\u2014 optional</span></label><textarea style="font-size:13px;padding:7px 10px;border:1px solid #e0deda;border-radius:8px;width:100%;font-family:inherit;resize:vertical;min-height:52px" id="enotes_'+i+'">'+e.notes+'</textarea></div><div style="display:flex;gap:8px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditing('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove</button></div></div></div>';
+        var mlines=e.meetings&&e.meetings.length?'<div class="emeta" style="margin-bottom:8px;line-height:1.8;font-size:12px;color:#999">'+e.meetings.join('<br>')+'</div>':'';
+        var reassignHtml='';
+        if(e.isOther){
+          // Build project options grouped: matched projects first, then all others
+          var usedProjs=getUsed();
+          var projList=ALL_LOADED_PROJECTS.length?ALL_LOADED_PROJECTS:ALL_PROJECTS.map(function(p){return p.project;});
+          var opts=projList.filter(function(p){return p!=='Other Time'&&!usedProjs[p];}).map(function(p){
+            return '<option value="'+p+'">'+p+'</option>';
+          }).join('');
+          reassignHtml='<div style="margin-bottom:8px"><label style="font-size:12px;color:#888;font-weight:500;display:block;margin-bottom:4px">Reassign to project <span style="font-weight:400;color:#ccc">\u2014 optional</span></label><select id="ereassign_'+i+'" style="font-size:13px;padding:7px 10px;border:1px solid #e0deda;border-radius:8px;width:100%;font-family:inherit;background:#fafaf9"><option value="">Keep as Other Time</option>'+opts+'</select></div>';
+        }
+        return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">'+e.project+'<span class="suggbadge">from calendar</span></div>'+mlines+reassignHtml+'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><label style="font-size:12px;color:#888;font-weight:500;white-space:nowrap">Hours</label><input type="number" value="'+e.hours+'" min="0.5" max="80" step="0.25" style="font-size:14px;padding:6px 10px;border:1px solid #e0deda;border-radius:8px;width:90px;font-family:inherit" id="ehrs_'+i+'"/></div><div style="margin-bottom:8px"><label style="font-size:12px;color:#888;font-weight:500;display:block;margin-bottom:4px">Notes <span style="font-weight:400;color:#ccc">\u2014 optional</span></label><textarea style="font-size:13px;padding:7px 10px;border:1px solid #e0deda;border-radius:8px;width:100%;font-family:inherit;resize:vertical;min-height:52px" id="enotes_'+i+'">'+e.notes+'</textarea></div><div style="display:flex;gap:8px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditing('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove</button></div></div></div>';
       }
       if(e.suggested){
         var mc=e.meetings&&e.meetings.length?e.meetings.length+' meeting'+(e.meetings.length>1?'s':''):'';
@@ -410,10 +420,29 @@ function renderEntries(){
 
 function startEditing(i){entries[i].editing=true;renderEntries();}
 function doneEditing(i){
-  var hEl=document.getElementById('ehrs_'+i),nEl=document.getElementById('enotes_'+i);
+  var hEl=document.getElementById('ehrs_'+i);
+  var nEl=document.getElementById('enotes_'+i);
+  var rEl=document.getElementById('ereassign_'+i);
   if(hEl){var h=parseFloat(hEl.value);if(!isNaN(h)&&h>0)entries[i].hours=Math.round(h*4)/4;}
   if(nEl)entries[i].notes=nEl.value;
-  entries[i].editing=false; renderEntries();
+  // Handle reassignment
+  if(rEl&&rEl.value){
+    var newProj=rEl.value;
+    // Check if this project already has an entry — if so, add hours to it
+    var existing=-1;
+    entries.forEach(function(e,idx){if(idx!==i&&e.project===newProj)existing=idx;});
+    if(existing!==-1){
+      entries[existing].hours=Math.round((entries[existing].hours+entries[i].hours)*4)/4;
+      if(entries[i].notes) entries[existing].notes=(entries[existing].notes?entries[existing].notes+'; ':'')+entries[i].notes;
+      entries.splice(i,1);
+    } else {
+      entries[i].project=newProj;
+      entries[i].account=ACCT_MAP[newProj]||'';
+      entries[i].isOther=false;
+    }
+  }
+  if(entries[i]) entries[i].editing=false;
+  renderEntries();
 }
 
 function doSubmit(){
