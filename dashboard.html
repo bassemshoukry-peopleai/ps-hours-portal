@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PS Dashboard — Backstory</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Chivo+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap');
+  :root {
+    --graphite: #171721;
+    --g40: #55555E;
+    --g30: #7F7F85;
+    --g20: #ABABAD;
+    --g10: #D5D5D6;
+    --g5: #F5F5F5;
+    --horizon: #6296AD;
+    --horizon-60: #447C93;
+    --horizon-10: #DBEBF2;
+    --white: #FFFFFF;
+    --green: #1a7a4a;
+    --green-bg: #f0faf5;
+    --red: #8b2020;
+    --red-bg: #fdf2f2;
+    --yellow: #7a5c00;
+    --yellow-bg: #fffbf0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--g5);min-height:100vh;color:var(--graphite)}
+  
+  /* Header */
+  .header{background:var(--graphite);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .header-left{display:flex;align-items:center;gap:12px}
+  .logo-svg svg{height:18px;width:auto}
+  .logo-divider{width:1px;height:16px;background:var(--g40)}
+  .header-title{font-family:'Chivo Mono',monospace;font-size:11px;font-weight:500;color:var(--g20);letter-spacing:.1em;text-transform:uppercase}
+  .header-right{display:flex;align-items:center;gap:12px}
+  .week-nav{display:flex;align-items:center;gap:8px}
+  .week-btn{background:none;border:1px solid var(--g40);color:var(--g20);width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .week-btn:hover{border-color:var(--white);color:var(--white)}
+  .week-label{font-family:'Chivo Mono',monospace;font-size:11px;font-weight:500;color:var(--white);letter-spacing:.06em;min-width:90px;text-align:center}
+
+  /* Main */
+  .main{padding:1.5rem 2rem;max-width:1400px;margin:0 auto}
+
+  /* Summary row */
+  .summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+  .stat-card{background:var(--white);border:1px solid var(--g10);border-radius:8px;padding:1rem 1.25rem}
+  .stat-label{font-family:'Chivo Mono',monospace;font-size:10px;font-weight:500;color:var(--g30);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+  .stat-value{font-size:28px;font-weight:300;color:var(--graphite);line-height:1}
+  .stat-value span{font-size:13px;color:var(--g30);font-weight:400;margin-left:4px}
+  .stat-sub{font-size:12px;color:var(--g40);margin-top:4px}
+
+  /* Team grid */
+  .section-label{font-family:'Chivo Mono',monospace;font-size:10px;font-weight:500;color:var(--g30);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.75rem}
+  .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:1.5rem}
+  
+  .person-card{background:var(--white);border:1px solid var(--g10);border-radius:8px;padding:1.25rem;position:relative;overflow:hidden}
+  .person-card.ok{border-left:3px solid var(--horizon)}
+  .person-card.under{border-left:3px solid #e8a020}
+  .person-card.over{border-left:3px solid #c05527}
+  .person-card.empty{border-left:3px solid var(--g10)}
+
+  .person-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+  .person-name{font-size:14px;font-weight:500;color:var(--graphite)}
+  .person-status{font-family:'Chivo Mono',monospace;font-size:9px;font-weight:500;padding:2px 7px;border-radius:3px;letter-spacing:.05em;text-transform:uppercase}
+  .status-ok{background:var(--horizon-10);color:var(--horizon-60)}
+  .status-under{background:#fff3e0;color:#8a5000}
+  .status-over{background:#fff0ec;color:#7a2a10}
+  .status-empty{background:var(--g5);color:var(--g30)}
+
+  .hours-row{display:flex;align-items:baseline;gap:6px;margin-bottom:10px}
+  .hours-actual{font-size:32px;font-weight:300;color:var(--graphite);line-height:1}
+  .hours-sep{font-size:14px;color:var(--g20)}
+  .hours-planned{font-size:14px;color:var(--g40);font-weight:400}
+  .hours-unit{font-size:12px;color:var(--g30);margin-left:2px}
+
+  /* Progress bar */
+  .progress-wrap{height:4px;background:var(--g10);border-radius:2px;margin-bottom:12px;overflow:hidden}
+  .progress-fill{height:100%;border-radius:2px;transition:width .4s}
+  .fill-ok{background:var(--horizon)}
+  .fill-under{background:#e8a020}
+  .fill-over{background:#c05527}
+
+  /* Sparkline */
+  .sparkline-wrap{height:40px;margin-bottom:10px}
+  
+  /* Project breakdown */
+  .breakdown{display:flex;flex-direction:column;gap:4px}
+  .breakdown-row{display:flex;align-items:center;gap:8px}
+  .breakdown-bar-wrap{flex:1;height:4px;background:var(--g5);border-radius:2px;overflow:hidden}
+  .breakdown-bar{height:100%;background:var(--horizon);border-radius:2px;opacity:0.7}
+  .breakdown-label{font-size:11px;color:var(--g40);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+  .breakdown-hrs{font-family:'Chivo Mono',monospace;font-size:10px;color:var(--g30);min-width:28px;text-align:right}
+
+  /* Trend chart */
+  .trend-section{background:var(--white);border:1px solid var(--g10);border-radius:8px;padding:1.25rem;margin-bottom:1.5rem}
+  .trend-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+  .chart-wrap{height:200px;position:relative}
+
+  /* Loading / error */
+  .loading{text-align:center;padding:4rem;color:var(--g30);font-size:14px}
+  .error-msg{background:var(--red-bg);color:var(--red);border:1px solid #f5c6c6;border-radius:8px;padding:12px 16px;font-size:13px;margin-bottom:1rem}
+
+  @media(max-width:600px){
+    .main{padding:1rem}
+    .summary-row{grid-template-columns:1fr 1fr}
+    .header{padding:.75rem 1rem}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo-svg">
+      <!-- Backstory SVG inline -->
+      <svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1168.26 194.964" style="fill:#ffffff;height:18px;width:auto">
+        <path d="M235.489,0h67.79c27.295,0,45.997,16.97,45.997,40.328c0,17.629-10.129,30.622-25.75,35.691c16.724,3.081,29.048,16.527,29.048,37.02c0,23.801-20.464,41.204-47.1,41.204h-69.985V0ZM299.312,64.562c14.962,0,23.545-7.491,23.545-20.493s-8.583-20.494-23.545-20.494h-37.197v40.987h37.197ZM301.074,130.668c15.848,0,25.09-7.707,25.09-21.596c0-13.888-9.242-21.595-25.09-21.595h-38.95v43.191h38.95Z"/>
+        <path d="M433.583,154.243c-.443-2.421-.876-6.615-1.319-12.776v-2.422c-5.945,9.912-18.712,17.403-33.673,17.403c-20.464,0-36.095-13.22-36.095-32.394c0-22.698,17.166-33.713,40.052-35.475l28.83-2.421v-3.081c0-12.343-7.707-20.494-19.804-20.494h-1.762c-10.778,0-18.929,6.172-19.805,14.765h-25.523c1.762-20.71,20.247-35.475,46.214-35.475c27.945,0,45.554,16.3,45.554,40.544v47.592c0,11.015.443,19.175,1.103,24.234h-23.772ZM431.388,105.106l-25.307,2.205c-10.561,1.102-18.702,6.171-18.702,15.207c0,7.708,6.605,13.22,15.631,13.22h1.536c13.426,0,26.852-10.798,26.852-24.244v-6.388h-.01Z"/>
+        <path d="M521.798,41.863c27.069,0,45.338,14.322,47.533,39.885h-25.307c-1.978-11.674-9.686-19.175-21.35-19.175h-1.978c-17.826,0-26.41,16.527-26.41,36.577c0,20.05,8.584,36.577,26.41,36.577h1.978c11.664,0,19.362-7.491,21.35-19.175h25.307c-2.195,25.563-20.464,39.885-47.533,39.885c-31.469,0-52.819-23.574-52.819-57.287c0-33.713,21.35-57.287,52.819-57.287Z"/>
+        <path d="M622.1,105.765l-13.869,13.879v34.589h-25.523V0h25.523v88.136l43.359-44.068h31.695l-43.575,43.852l45.997,66.323h-30.366l-33.231-48.478h-.01Z"/>
+        <path d="M707.234,118.768c.659,10.798,9.026,17.403,21.123,17.403h1.762c10.346,0,17.167-4.853,17.167-12.117c0-6.388-3.967-10.582-12.983-12.334l-14.972-3.307c-21.793-5.069-33.23-14.981-33.23-32.61c0-20.494,18.052-33.93,43.132-33.93c28.388,0,44.462,14.765,44.462,37.68h-25.523c-.886-10.798-7.264-17.403-18.486-17.403h-1.762c-9.685,0-16.507,4.853-16.507,12.117c0,6.172,4.843,10.355,14.529,12.343l16.064,3.74c20.031,4.626,30.593,14.765,30.593,32.61c0,19.165-17.167,33.497-44.462,33.497c-29.49,0-45.997-14.765-46.44-37.68h25.533v-.01Z"/>
+        <path d="M801.424,65.005h-23.329v-20.936h23.329V8.377h25.306v35.691h25.524v20.936h-25.524v56.628c0,8.809,1.979,10.798,10.779,10.798h18.052v21.812h-27.285c-17.383,0-26.852-9.252-26.852-26.881v-62.357Z"/>
+        <path d="M911.224,41.863c31.469,0,54.138,24.234,54.138,57.287c0,33.053-22.669,57.287-54.138,57.287c-31.468,0-53.921-24.234-53.921-57.287c0-33.053,22.669-57.287,53.921-57.287ZM912.327,135.738c16.28,0,27.728-13.879,27.728-36.578c0-22.698-11.448-36.577-27.728-36.577h-1.979c-16.29,0-27.728,13.879-27.728,36.577c0,22.699,11.448,36.578,27.728,36.578h1.979Z"/>
+        <path d="M978.06,44.068h24.87v22.915c4.4-14.981,16.28-24.017,31.91-24.017h7.49v23.801h-9.46c-19.37,0-29.28,10.581-29.28,30.849v56.628h-25.53V44.068Z"/>
+        <path d="M1141.19,43.389l-27.9,72.013-2.48,6.339-36.17-77.122h-27.48l51.22,109.043-4.26,11.162c-1.21,3.199-2.59,5.325-4.15,6.389c-1.5,1.132-4.13,1.702-7.89,1.702h-23.54v22.049h29.51c7.38,0,13.03-1.279,16.94-3.839c3.97-2.559,7.31-7.097,10.01-13.632l53.26-134.114h-27.06l-.01.009Z"/>
+        <path d="M88.864,12.491L60.477,0.335L0,142.018l28.388,12.156L88.864,12.491Z"/>
+        <path d="M194.324,0.069h-30.868v154.096h30.868V0.069Z"/>
+        <path d="M157.028,0.069h-30.868v154.096h30.868V0.069Z"/>
+        <path d="M119.723,0.069h-30.868v154.096h30.868V0.069Z"/>
+      </svg>
+    </div>
+    <div class="logo-divider"></div>
+    <span class="header-title">Team Dashboard</span>
+  </div>
+  <div class="header-right">
+    <div class="week-nav">
+      <button class="week-btn" onclick="shiftWeek(-1)">&#8592;</button>
+      <span class="week-label" id="weekLabel">Loading...</span>
+      <button class="week-btn" onclick="shiftWeek(1)">&#8594;</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div id="errorBox" class="error-msg" style="display:none"></div>
+  <div id="loadingMsg" class="loading">Loading team data...</div>
+  <div id="content" style="display:none">
+    <!-- Summary stats -->
+    <div class="summary-row" id="summaryRow"></div>
+    <!-- Team cards -->
+    <div class="section-label">Team — This Week</div>
+    <div class="team-grid" id="teamGrid"></div>
+    <!-- Trend chart -->
+    <div class="trend-section">
+      <div class="trend-header">
+        <div class="section-label" style="margin:0">Team Hours — Last 8 Weeks</div>
+      </div>
+      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbx0cj4LYOnKK3CpArTVXGzGSy-ifXHmEjfbpTpomXfUX9n6fLKuycVM_M687mjaFTaE/exec';
+
+var TEAM = [
+  'Kaisha Fox','Eric Alley','Frank Shawn','Williams Santana',
+  'Justin Monell','Brianna Buck','Jenna Desiderio','Stephen','Bassem Shoukry'
+];
+
+var TARGET_HRS = 40;
+var currentWeekISO = null;
+var allData = null;
+var trendChartInst = null;
+
+// Date helpers
+function getMonday(d){var dt=new Date(d),day=dt.getDay();dt.setDate(dt.getDate()-day+(day===0?-6:1));return dt;}
+function fmtISO(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
+function fmtDisplay(d){return(d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(-2);}
+function addWeeks(iso,n){var d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n*7);return fmtISO(getMonday(d));}
+
+function shiftWeek(n){
+  currentWeekISO = addWeeks(currentWeekISO, n);
+  document.getElementById('weekLabel').textContent = 'Week of '+fmtDisplay(new Date(currentWeekISO+'T12:00:00'));
+  loadData();
+}
+
+function init(){
+  var mon = getMonday(new Date());
+  // If Monday, show last week by default (people logging past week)
+  if(new Date().getDay()===1) mon = getMonday(new Date(mon.getTime()-7*86400000));
+  currentWeekISO = fmtISO(mon);
+  document.getElementById('weekLabel').textContent = 'Week of '+fmtDisplay(mon);
+  loadData();
+}
+
+function loadData(){
+  document.getElementById('loadingMsg').style.display='block';
+  document.getElementById('content').style.display='none';
+  document.getElementById('errorBox').style.display='none';
+
+  fetch(WEBHOOK_URL, {
+    method:'POST',
+    body: JSON.stringify({action:'dashboard', weekISO: currentWeekISO, weeks: 8})
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(data.error){showError(data.error);return;}
+    allData = data;
+    render(data);
+  })
+  .catch(function(err){showError('Failed to load: '+err.message);});
+}
+
+function showError(msg){
+  document.getElementById('loadingMsg').style.display='none';
+  document.getElementById('errorBox').textContent=msg;
+  document.getElementById('errorBox').style.display='block';
+}
+
+function render(data){
+  document.getElementById('loadingMsg').style.display='none';
+  document.getElementById('content').style.display='block';
+
+  var members = data.members || [];
+  var weekLabels = data.weekLabels || [];
+
+  // Summary stats
+  var totalActual=0, totalPlanned=0, submitted=0, underCount=0, overCount=0;
+  members.forEach(function(m){
+    totalActual+=m.thisWeek.actual||0;
+    totalPlanned+=m.thisWeek.planned||0;
+    if((m.thisWeek.actual||0)>0) submitted++;
+    if((m.thisWeek.actual||0)<35 && (m.thisWeek.actual||0)>0) underCount++;
+    if((m.thisWeek.actual||0)>45) overCount++;
+  });
+
+  document.getElementById('summaryRow').innerHTML =
+    statCard('Team Hours', totalActual.toFixed(1), 'hrs', 'Actual this week')+
+    statCard('Submitted', submitted+'/'+members.length, '', 'Members logged hours')+
+    statCard('Under Target', underCount, '', 'Below 35h this week')+
+    statCard('Over Target', overCount, '', 'Above 45h this week');
+
+  // Team cards
+  var gridHtml = '';
+  members.forEach(function(m){
+    gridHtml += renderPersonCard(m);
+  });
+  document.getElementById('teamGrid').innerHTML = gridHtml;
+
+  // Trend chart
+  renderTrendChart(members, weekLabels);
+}
+
+function statCard(label, value, unit, sub){
+  return '<div class="stat-card">'
+    +'<div class="stat-label">'+label+'</div>'
+    +'<div class="stat-value">'+value+(unit?'<span>'+unit+'</span>':'')+'</div>'
+    +'<div class="stat-sub">'+sub+'</div>'
+    +'</div>';
+}
+
+function renderPersonCard(m){
+  var actual = m.thisWeek.actual || 0;
+  var planned = m.thisWeek.planned || 0;
+  var projects = m.thisWeek.projects || [];
+  
+  var statusClass, statusLabel;
+  if(actual===0){statusClass='empty';statusLabel='Not logged';}
+  else if(actual<35){statusClass='under';statusLabel='Under';}
+  else if(actual>45){statusClass='over';statusLabel='Over';}
+  else{statusClass='ok';statusLabel='On track';}
+
+  var pct = planned>0 ? Math.min((actual/planned)*100,120) : (actual>0?100:0);
+  var fillClass = statusClass==='ok'?'fill-ok':statusClass==='under'?'fill-under':'fill-over';
+
+  // Sparkline canvas
+  var sparkId = 'spark_'+m.name.replace(/\s/g,'_');
+
+  // Top projects breakdown (max 3)
+  var topProjects = projects.slice(0,4);
+  var maxHrs = topProjects.length ? topProjects[0].actual : 1;
+  var breakdownHtml = topProjects.map(function(p){
+    var w = maxHrs>0 ? (p.actual/maxHrs)*100 : 0;
+    var shortName = p.project.split(' - ')[0];
+    return '<div class="breakdown-row">'
+      +'<span class="breakdown-label" title="'+p.project+'">'+shortName+'</span>'
+      +'<div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:'+w+'%"></div></div>'
+      +'<span class="breakdown-hrs">'+p.actual+'h</span>'
+      +'</div>';
+  }).join('');
+
+  return '<div class="person-card '+statusClass+'">'
+    +'<div class="person-header">'
+    +'<span class="person-name">'+m.name+'</span>'
+    +'<span class="person-status status-'+statusClass+'">'+statusLabel+'</span>'
+    +'</div>'
+    +'<div class="hours-row">'
+    +'<span class="hours-actual">'+actual+'</span>'
+    +(planned?'<span class="hours-sep">/</span><span class="hours-planned">'+planned+'</span>':'')
+    +'<span class="hours-unit">hrs</span>'
+    +'</div>'
+    +'<div class="progress-wrap"><div class="progress-fill '+fillClass+'" style="width:'+pct+'%"></div></div>'
+    +'<div class="sparkline-wrap"><canvas id="'+sparkId+'" height="40"></canvas></div>'
+    +(breakdownHtml?'<div class="breakdown">'+breakdownHtml+'</div>':'')
+    +'</div>';
+}
+
+function renderTrendChart(members, weekLabels){
+  var colors = ['#6296AD','#447C93','#8FCDA8','#B08FA2','#C05527','#275198','#21B5FF','#BBBCBC','#7F7F85'];
+  var datasets = members.map(function(m,i){
+    return {
+      label: m.name.split(' ')[0],
+      data: m.trend || [],
+      borderColor: colors[i%colors.length],
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      pointRadius: 3,
+      pointHoverRadius: 5,
+      tension: 0.3
+    };
+  });
+
+  if(trendChartInst) trendChartInst.destroy();
+  var ctx = document.getElementById('trendChart').getContext('2d');
+  trendChartInst = new Chart(ctx, {
+    type:'line',
+    data:{ labels: weekLabels, datasets: datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'right', labels:{ boxWidth:12, font:{size:11,family:'Inter'}, color:'#55555E', padding:8 } } },
+      scales:{
+        y:{ min:0, max:60, grid:{ color:'#D5D5D6', lineWidth:0.5 }, ticks:{ color:'#7F7F85', font:{size:10}, stepSize:10 },
+            border:{ display:false } },
+        x:{ grid:{ display:false }, ticks:{ color:'#7F7F85', font:{size:10} }, border:{ display:false } }
+      },
+      interaction:{ intersect:false, mode:'index' }
+    }
+  });
+
+  // Render sparklines after cards are in DOM
+  setTimeout(function(){
+    members.forEach(function(m,i){
+      var id = 'spark_'+m.name.replace(/\s/g,'_');
+      var el = document.getElementById(id);
+      if(!el) return;
+      var trend = m.trend || [];
+      new Chart(el.getContext('2d'), {
+        type:'line',
+        data:{ labels: trend.map(function(_,j){return j;}), datasets:[{
+          data: trend,
+          borderColor: colors[i%colors.length],
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.3
+        }]},
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{legend:{display:false},tooltip:{enabled:false}},
+          scales:{x:{display:false},y:{display:false,min:0,max:60}}
+        }
+      });
+    });
+  }, 100);
+}
+
+init();
+</script>
+</body>
+</html>
