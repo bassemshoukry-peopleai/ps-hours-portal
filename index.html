@@ -271,7 +271,8 @@ function switchTab(tab){
 
 function loadLastWeek(){
   lwLoaded=true;
-  fetch(WEBHOOK_URL,{method:'POST',body:JSON.stringify({action:'lastweek',owner:currentOwner}),headers:{'Content-Type':'application/json'}})
+  var url=WEBHOOK_URL+'?action=lastweek&owner='+encodeURIComponent(currentOwner);
+  fetch(url)
     .then(function(r){return r.json();})
     .then(function(data){
       var el=document.getElementById('lwContent');
@@ -494,108 +495,14 @@ function renderEntries(){
       }
       if(e.suggested){
         var mc=e.meetings&&e.meetings.length?e.meetings.length+' meeting'+(e.meetings.length>1?'s':''):'';
-        return '<div class="'+cls+'" style="cursor:pointer" onclick="startEditing('+i+')"><div class="einfo"><div class="eproj">'+e.project+'<span class="suggbadge">from calendar</span></div><div class="emeta">'+mc+' \u2014 tap to review &amp; edit</div></div><div class="ehrs">'+e.hours+'<br><span>hrs</span></div><button class="erm" onclick="event.stopPropagation();removeEntry('+i+')" title="Remove">\xD7</button></div>';
+        var lwh2=lastWeekMap[e.project];
+        var dHtml2='';
+        if(lwh2!==undefined){
+          var diff2=Math.round((e.hours-lwh2)*4)/4;
+          if(diff2>0) dHtml2='<span style="font-family:\'Chivo Mono\',monospace;font-size:10px;font-weight:500;color:#1a7a4a;margin-left:5px">&#9650;'+diff2+'h</span>';
+          else if(diff2<0) dHtml2='<span style="font-family:\'Chivo Mono\',monospace;font-size:10px;font-weight:500;color:#c0392b;margin-left:5px">&#9660;'+Math.abs(diff2)+'h</span>';
+          else dHtml2='<span style="font-family:\'Chivo Mono\',monospace;font-size:10px;color:var(--graphite-30);margin-left:5px">&#9644;</span>';
+        }
+        var metaSub2=lwh2!==undefined?mc+' · '+lwh2+'h last wk':mc;
+        return '<div class="'+cls+'" style="cursor:pointer" onclick="startEditing('+i+')"><div class="einfo"><div class="eproj">'+e.project+'<span class="suggbadge">from calendar</span>'+dHtml2+'</div><div class="emeta">'+metaSub2+' — tap to review &amp; edit</div></div><div class="ehrs">'+e.hours+'<br><span>hrs</span></div><button class="erm" onclick="event.stopPropagation();removeEntry('+i+')" title="Remove">\xD7</button></div>';
       }
-      var nb=e.notes?'<span class="notebadge">note</span>':'';
-      var lwh=lastWeekMap[e.project];
-      var dHtml='';
-      if(lwh!==undefined){
-        var diff=Math.round((e.hours-lwh)*4)/4;
-        if(diff>0) dHtml='<span style="font-family:\'Chivo Mono\',monospace;font-size:10px;font-weight:500;color:#1a7a4a;margin-left:5px">&#9650;'+diff+'h</span>';
-        else if(diff<0) dHtml='<span style="font-family:\'Chivo Mono\',monospace;font-size:10px;font-weight:500;color:#c0392b;margin-left:5px">&#9660;'+Math.abs(diff)+'h</span>';
-        else dHtml='<span style="font-family:\'Chivo Mono\',monospace;font-size:10px;color:var(--graphite-30);margin-left:5px">&#9644;</span>';
-      }
-      var metaSub=lwh!==undefined?' · '+lwh+'h last wk':'';
-      return '<div class="'+cls+'"><div class="einfo"><div class="eproj">'+e.project+nb+dHtml+'</div><div class="emeta">'+(ACCT_MAP[e.project]||'')+metaSub+'</div>'+(e.notes?'<div class="enotes">'+e.notes+'</div>':'')+  '</div><div class="ehrs">'+e.hours+'<br><span>hrs</span></div><button class="erm" onclick="removeEntry('+i+')" title="Remove">\xD7</button></div>';
-    }).join('');
-  }
-  var total=entries.reduce(function(s,e){return s+e.hours;},0);
-  document.getElementById('totalHrs').innerHTML=total+'<span style="font-size:13px;color:#aaa;font-weight:400"> hrs</span>';
-}
-
-function startEditing(i){entries[i].editing=true;renderEntries();}
-function doneEditing(i){
-  var hEl=document.getElementById('ehrs_'+i);
-  var nEl=document.getElementById('enotes_'+i);
-  if(hEl){var h=parseFloat(hEl.value);if(!isNaN(h)&&h>0)entries[i].hours=Math.round(h*4)/4;}
-  if(nEl)entries[i].notes=nEl.value;
-  entries[i].editing=false;
-  renderEntries();
-}
-
-function doneEditingOther(i){
-  var e=entries[i];
-  if(!e||!e.meetings) return;
-  // Collect per-meeting assignments
-  var toAdd={}; // project -> {hours, meetingLabels[]}
-  var otherHours=0;
-  e.meetings.forEach(function(m,mi){
-    var sel=document.getElementById('ereassign_'+i+'_'+mi);
-    var proj=sel?sel.value:'';
-    var hrsMatch=m.match(/,\s*([\d.]+)h\)$/);
-    var mhrs=hrsMatch?parseFloat(hrsMatch[1]):0;
-    if(proj && proj!=='Other Time'){
-      if(!toAdd[proj]) toAdd[proj]={hours:0,meetings:[]};
-      toAdd[proj].hours+=mhrs;
-      toAdd[proj].meetings.push(m);
-    } else {
-      otherHours+=mhrs;
-    }
-  });
-  // Remove the Other Time entry
-  entries.splice(i,1);
-  // Add reassigned entries (merge with existing if project already exists)
-  Object.keys(toAdd).forEach(function(proj){
-    var d=toAdd[proj];
-    var hrs=Math.round(d.hours*4)/4;
-    var existing=-1;
-    entries.forEach(function(en,idx){if(en.project===proj)existing=idx;});
-    if(existing!==-1){
-      entries[existing].hours=Math.round((entries[existing].hours+hrs)*4)/4;
-    } else {
-      entries.push({project:proj,account:ACCT_MAP[proj]||'',hours:hrs,notes:d.meetings.join('; '),meetings:d.meetings,suggested:true,editing:false});
-    }
-  });
-  // Re-add Other Time entry if anything remains
-  if(otherHours>0){
-    var remainMeetings=[];
-    e.meetings.forEach(function(m,mi){
-      var sel=document.getElementById('ereassign_'+i+'_'+mi);
-      var proj=sel?sel.value:'';
-      if(!proj||proj==='Other Time') remainMeetings.push(m);
-    });
-    entries.push({project:'Other Time',account:'Internal',hours:Math.round(otherHours*4)/4,notes:'',meetings:remainMeetings,suggested:true,editing:false,isOther:true});
-  }
-  renderEntries();
-}
-
-function doSubmit(){
-  var owner=document.getElementById('ownerSel').value;
-  if(!owner){alert('Please select your name.');return;}
-  if(!entries.length){alert('Please add at least one entry.');return;}
-  var rawDate=document.getElementById('weekDate').value;
-  var weekISO=fmtISO(getMonday(new Date(rawDate+'T12:00:00')));
-  var btn=document.getElementById('btnSubmit');
-  btn.disabled=true; btn.textContent='Submitting...';
-  showStatus('Writing to Google Sheet...','load');
-  var payload={entries:entries.map(function(e){return{project:e.project,account:e.account,owner:owner,weekISO:weekISO,hours:e.hours,notes:e.notes||''};})};
-  fetch(WEBHOOK_URL,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}})
-    .then(function(r){return r.json();})
-    .then(function(result){
-      if(result.status===200){
-        showStatus('\u2713 '+result.message+' Week of '+fmtD(getMonday(new Date(rawDate+'T12:00:00')))+', logged for '+owner+'.','ok');
-        entries=[]; lwLoaded=false; renderEntries(); btn.textContent='Submit another week';
-      } else{showStatus('Partial: '+result.message,'err');btn.textContent='Retry';}
-      btn.disabled=false;
-    })
-    .catch(function(err){showStatus('Submission failed: '+err.message,'err');btn.textContent='Retry';btn.disabled=false;});
-}
-
-function showStatus(msg,type){
-  var el=document.getElementById('statusMsg');
-  el.className='status s-'+type; el.textContent=msg; el.style.display='block';
-  if(type==='ok')setTimeout(function(){el.style.display='none';},10000);
-}
-</script>
-</body>
-</html>
