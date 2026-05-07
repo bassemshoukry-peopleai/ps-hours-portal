@@ -154,7 +154,7 @@
           <option value="">Select name...</option>
           <option>Kaisha Fox</option><option>Frank Shawn</option>
           <option>Williams Santana</option><option>Justin Monell</option><option>Brianna Buck</option>
-          <option>Jenna Desiderio</option><option>Stephen</option><option>Bassem Shoukry</option>
+          <option>Jenna Desiderio</option><option>Stephen Henck</option><option>Bassem Shoukry</option>
           <option>Greg Tise</option>
         </select>
       </div>
@@ -476,7 +476,7 @@ function renderEntries(){
           var projList=ALL_LOADED_PROJECTS.length?ALL_LOADED_PROJECTS:ALL_PROJECTS.map(function(p){return p.project;});
           var projOpts='<option value="">Other Time</option>'+projList.filter(function(p){return p!=='Other Time';}).map(function(p){
             return '<option value="'+p+'">'+p+'</option>';
-          }).join('');
+          }).join('')+'<option value="__ignore__">— Ignore (exclude)</option>';
           var meetingRows=e.meetings.map(function(m,mi){
             var hrsMatch=m.match(/,\s*([\d.]+)h\)$/);
             var mhrs=hrsMatch?parseFloat(hrsMatch[1]):0;
@@ -551,6 +551,7 @@ function doneEditingOther(i){
     var proj=sel?sel.value:'';
     var hrsMatch=m.match(/,\s*([\d.]+)h\)$/);
     var mhrs=hrsMatch?parseFloat(hrsMatch[1]):0;
+    if(proj==='__ignore__') return; // excluded
     if(proj&&proj!=='Other Time'){
       if(!toAdd[proj]) toAdd[proj]={hours:0,meetings:[]};
       toAdd[proj].hours+=mhrs;
@@ -571,6 +572,7 @@ function doneEditingOther(i){
     e.meetings.forEach(function(m,mi){
       var sel=document.getElementById('ereassign_'+i+'_'+mi);
       var proj=sel?sel.value:'';
+      if(proj==='__ignore__') return;
       if(!proj||proj==='Other Time') remainMeetings.push(m);
     });
     entries.push({project:'Other Time',account:'Internal',hours:Math.round(otherHours*4)/4,notes:'',meetings:remainMeetings,suggested:true,editing:false,isOther:true});
