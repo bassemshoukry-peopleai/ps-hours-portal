@@ -255,9 +255,10 @@ function onOwnerChange(){
   if(owner){
     switchTab('log');
     lastWeekMap={};
-    google.script.run
-      .withSuccessHandler(function(map){ lastWeekMap=map||{}; renderEntries(); })
-      .getLastWeekProjectMap(owner);
+    fetch(WEBHOOK_URL+'?action=lastweekmap&owner='+encodeURIComponent(owner))
+      .then(function(r){return r.json();})
+      .then(function(map){ lastWeekMap=map||{}; renderEntries(); })
+      .catch(function(){}); // silent fail - delta just won't show
   }
 }
 
