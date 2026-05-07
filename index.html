@@ -496,7 +496,7 @@ function renderEntries(){
           else dHtml2='<span style="font-size:10px;color:var(--graphite-30)">\u25ac</span>';
         }
         var metaSub2=lwh2!==undefined?mc+' \xb7 '+lwh2+'h last wk':mc;
-        return '<div class="'+cls+'" style="cursor:pointer" onclick="startEditing('+i+')"><div class="einfo"><div class="eproj">'+e.project+'<span class="suggbadge">from calendar</span></div><div class="emeta">'+metaSub2+' \u2014 tap to review &amp; edit</div></div><div style="text-align:right;min-width:56px;flex-shrink:0"><div class="ehrs">'+e.hours+'<br><span>hrs</span></div>'+(dHtml2?'<div style="margin-top:2px">'+dHtml2+'</div>':'')+' </div><button class="erm" onclick="event.stopPropagation();removeEntry('+i+')" title="Remove">\xd7</button></div>';
+        return '<div class="'+cls+'" style="cursor:pointer" onclick="startEditing('+i+')"><div class="einfo"><div class="eproj">'+e.project+'<span class="suggbadge">from calendar</span></div><div class="emeta">'+metaSub2+' \u2014 tap to review &amp; edit</div></div><div sdisplay:flex;align-items:center;gap:6px;flex-shrink:0">'+(dHtml2?'<div>'+dHtml2+'</div>':'')+'<div class="ehrs">'+e.hours+'<br><span>hrs</span></div></div><button class="erm" onclick="event.stopPropagation();removeEntry('+i+')" title="Remove">\xd7</button></div>';
       }
 
       // Manual entry
@@ -510,7 +510,7 @@ function renderEntries(){
         else dHtml='<span style="font-size:10px;color:var(--graphite-30)">\u25ac</span>';
       }
       var metaSub=lwh!==undefined?' \xb7 '+lwh+'h last wk':'';
-      return '<div class="'+cls+'"><div class="einfo"><div class="eproj">'+e.project+nb+'</div><div class="emeta">'+(ACCT_MAP[e.project]||'')+metaSub+'</div>'+(e.notes?'<div class="enotes">'+e.notes+'</div>':'')+  '</div><div style="text-align:right;min-width:56px;flex-shrink:0"><div class="ehrs">'+e.hours+'<br><span>hrs</span></div>'+(dHtml?'<div style="margin-top:2px">'+dHtml+'</div>':'')+' </div><button class="erm" onclick="removeEntry('+i+')" title="Remove">\xd7</button></div>';
+      return '<div class="'+cls+'"><div class="einfo"><div class="eproj">'+e.project+nb+'</div><div class="emeta">'+(ACCT_MAP[e.project]||'')+metaSub+'</div>'+(e.notes?'<div class="enotes">'+e.notes+'</div>':'')+  '</div><div sdisplay:flex;align-items:center;gap:6px;flex-shrink:0">'+(dHtml?'<div>'+dHtml+'</div>':'')+'<div class="ehrs">'+e.hours+'<br><span>hrs</span></div></div><button class="erm" onclick="removeEntry('+i+')" title="Remove">\xd7</button></div>';
     }).join('');
   }
   var total=entries.reduce(function(s,e){return s+e.hours;},0);
