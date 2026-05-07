@@ -214,6 +214,7 @@ ALL_PROJECTS.forEach(function(p){ACCT_MAP[p.project]=p.account;});
 var HAS_TRACKER = {"Kaisha Fox":1,"Eric Alley":1,"Frank Shawn":1,"Williams Santana":1,"Justin Monell":1,"Brianna Buck":1,"Jenna Desiderio":1,"Stephen":1,"Bassem Shoukry":1};
 
 var entries=[], addOpen=false, lwLoaded=false, currentOwner='', calToken=sessionStorage.getItem('calToken')||null;
+var lastWeekMap={}; // project -> last week hours
 
 function getMonday(d){var dt=new Date(d),day=dt.getDay();dt.setDate(dt.getDate()-day+(day===0?-6:1));return dt;}
 function fmtD(d){return(d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(-2);}
@@ -251,7 +252,13 @@ function onOwnerChange(){
     hb.style.display='block';
   }
   document.getElementById('mainSection').style.display=owner?'block':'none';
-  if(owner) switchTab('log');
+  if(owner){
+    switchTab('log');
+    lastWeekMap={};
+    google.script.run
+      .withSuccessHandler(function(map){ lastWeekMap=map||{}; renderEntries(); })
+      .getLastWeekProjectMap(owner);
+  }
 }
 
 function switchTab(tab){
@@ -490,7 +497,16 @@ function renderEntries(){
         return '<div class="'+cls+'" style="cursor:pointer" onclick="startEditing('+i+')"><div class="einfo"><div class="eproj">'+e.project+'<span class="suggbadge">from calendar</span></div><div class="emeta">'+mc+' \u2014 tap to review &amp; edit</div></div><div class="ehrs">'+e.hours+'<br><span>hrs</span></div><button class="erm" onclick="event.stopPropagation();removeEntry('+i+')" title="Remove">\xD7</button></div>';
       }
       var nb=e.notes?'<span class="notebadge">note</span>':'';
-      return '<div class="'+cls+'"><div class="einfo"><div class="eproj">'+e.project+nb+'</div><div class="emeta">'+(ACCT_MAP[e.project]||'')+'</div>'+(e.notes?'<div class="enotes">'+e.notes+'</div>':'')+  '</div><div class="ehrs">'+e.hours+'<br><span>hrs</span></div><button class="erm" onclick="removeEntry('+i+')" title="Remove">\xD7</button></div>';
+      var lwh=lastWeekMap[e.project];
+      var dHtml='';
+      if(lwh!==undefined){
+        var diff=Math.round((e.hours-lwh)*4)/4;
+        if(diff>0) dHtml='<span style="font-family:\'Chivo Mono\',monospace;font-size:10px;font-weight:500;color:#1a7a4a;margin-left:5px">&#9650;'+diff+'h</span>';
+        else if(diff<0) dHtml='<span style="font-family:\'Chivo Mono\',monospace;font-size:10px;font-weight:500;color:#c0392b;margin-left:5px">&#9660;'+Math.abs(diff)+'h</span>';
+        else dHtml='<span style="font-family:\'Chivo Mono\',monospace;font-size:10px;color:var(--graphite-30);margin-left:5px">&#9644;</span>';
+      }
+      var metaSub=lwh!==undefined?' · '+lwh+'h last wk':'';
+      return '<div class="'+cls+'"><div class="einfo"><div class="eproj">'+e.project+nb+dHtml+'</div><div class="emeta">'+(ACCT_MAP[e.project]||'')+metaSub+'</div>'+(e.notes?'<div class="enotes">'+e.notes+'</div>':'')+  '</div><div class="ehrs">'+e.hours+'<br><span>hrs</span></div><button class="erm" onclick="removeEntry('+i+')" title="Remove">\xD7</button></div>';
     }).join('');
   }
   var total=entries.reduce(function(s,e){return s+e.hours;},0);
