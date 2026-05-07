@@ -114,6 +114,24 @@
   .skel-p{height:8px;margin-bottom:6px;width:80%}
   .error-msg{background:var(--red-bg);color:var(--red);border:1px solid #f5c6c6;border-radius:8px;padding:12px 16px;font-size:13px;margin-bottom:1rem}
 
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem}
+  .insight-card{background:var(--white);border:1px solid var(--g10);border-radius:8px;padding:1.25rem}
+  .client-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .client-name{font-size:13px;font-weight:500;color:var(--graphite);min-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .client-bar-wrap{flex:1;height:6px;background:var(--g5);border-radius:3px;overflow:hidden}
+  .client-bar{height:100%;background:var(--horizon);border-radius:3px}
+  .client-hrs{font-family:'Chivo Mono',monospace;font-size:11px;color:var(--g40);min-width:36px;text-align:right}
+  .util-ring-wrap{display:flex;align-items:center;justify-content:center;margin:8px 0 12px}
+  .util-number{font-size:42px;font-weight:300;color:var(--graphite);text-align:center;line-height:1}
+  .util-label{font-size:12px;color:var(--g40);text-align:center;margin-top:4px}
+  .util-trend{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px}
+  .util-week{font-size:11px;color:var(--g30)}
+  .util-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .util-bar-label{font-size:11px;color:var(--g40);width:60px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .util-bar-wrap{flex:1;height:6px;background:var(--g5);border-radius:3px;overflow:hidden}
+  .util-bar-fill{height:100%;border-radius:3px}
+  .util-bar-pct{font-family:'Chivo Mono',monospace;font-size:10px;color:var(--g40);min-width:36px;text-align:right}
+  @media(max-width:700px){.two-col{grid-template-columns:1fr}}
   @media(max-width:600px){
     .main{padding:1rem}
     .summary-row{grid-template-columns:1fr 1fr}
@@ -164,6 +182,17 @@
     <!-- Team cards -->
     <div class="section-label">Team — This Week</div>
     <div class="team-grid" id="teamGrid"></div>
+    <!-- Utilization + Client Concentration -->
+    <div class="two-col">
+      <div class="insight-card">
+        <div class="section-label" style="margin-bottom:.75rem">Team Utilization</div>
+        <div id="utilSection"><div class="lw-loading">Loading...</div></div>
+      </div>
+      <div class="insight-card">
+        <div class="section-label" style="margin-bottom:.75rem">Client Concentration — This Week</div>
+        <div id="clientSection"><div class="lw-loading">Loading...</div></div>
+      </div>
+    </div>
     <!-- Trend chart -->
     <div class="trend-section">
       <div class="trend-header">
@@ -176,6 +205,84 @@
 
 <script>
 var WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzqzGkiaZTq6-7BVxxcav3JOd3AaeWchhTH7X2VUAjfVKu6mObIU6GN1i929BzmdXDT/exec';
+
+function renderUtilization(members) {
+  var TARGET = 40;
+  var thisWeekActuals = members.map(function(m){ return m.thisWeek.actual||0; });
+  var lastWeekActuals = members.map(function(m){ return m.trend && m.trend.length>=2 ? m.trend[m.trend.length-2] : 0; });
+
+  var thisTotal = thisWeekActuals.reduce(function(s,v){return s+v;},0);
+  var lastTotal = lastWeekActuals.reduce(function(s,v){return s+v;},0);
+  var teamTarget = TARGET * members.length;
+
+  var thisPct = teamTarget > 0 ? Math.round((thisTotal/teamTarget)*100) : 0;
+  var lastPct = teamTarget > 0 ? Math.round((lastTotal/teamTarget)*100) : 0;
+  var delta = thisPct - lastPct;
+
+  var color = thisPct >= 90 ? '#1a7a4a' : thisPct >= 70 ? 'var(--horizon-60)' : '#8b2020';
+  var deltaHtml = delta > 0
+    ? '<span style="font-size:12px;font-weight:500;color:#1a7a4a">▲'+delta+'%</span>'
+    : delta < 0
+    ? '<span style="font-size:12px;font-weight:500;color:#c0392b">▼'+Math.abs(delta)+'%</span>'
+    : '<span style="font-size:12px;color:var(--g30)">▬ same</span>';
+
+  // Per-person utilization bars
+  var sorted = members.slice().sort(function(a,b){return (b.thisWeek.actual||0)-(a.thisWeek.actual||0);});
+  var bars = sorted.map(function(m){
+    var pct = Math.min(Math.round(((m.thisWeek.actual||0)/TARGET)*100),120);
+    var fc = pct>=100?'#1a7a4a':pct>=75?'var(--horizon)':'#e8a020';
+    var firstName = m.name.split(' ')[0];
+    return '<div class="util-bar-row">'
+      +'<span class="util-bar-label">'+firstName+'</span>'
+      +'<div class="util-bar-wrap"><div class="util-bar-fill" style="width:'+Math.min(pct,100)+'%;background:'+fc+'"></div></div>'
+      +'<span class="util-bar-pct">'+pct+'%</span>'
+      +'</div>';
+  }).join('');
+
+  document.getElementById('utilSection').innerHTML =
+    '<div class="util-number" style="color:'+color+'">'+thisPct+'<span style="font-size:20px;color:var(--g30)">%</span></div>'
+    +'<div class="util-label">Team utilization vs '+teamTarget+'h target</div>'
+    +'<div class="util-trend">'+deltaHtml+' <span class="util-week">vs last week ('+lastPct+'%)</span></div>'
+    +'<div style="margin-top:14px">'+bars+'</div>';
+}
+
+function renderClientConcentration(members) {
+  // Aggregate project hours across all members
+  var clientMap = {};
+  members.forEach(function(m){
+    (m.thisWeek.projects||[]).forEach(function(p){
+      // Extract client name (before first " - ")
+      var client = p.project.indexOf(' - ') !== -1 ? p.project.split(' - ')[0] : p.project;
+      if(client === 'Other Time' || client === 'Internal') return;
+      if(!clientMap[client]) clientMap[client] = 0;
+      clientMap[client] += p.actual||0;
+    });
+  });
+
+  var sorted = Object.keys(clientMap).map(function(c){return{client:c,hours:clientMap[c]};})
+    .sort(function(a,b){return b.hours-a.hours;})
+    .slice(0,8);
+
+  if(!sorted.length){
+    document.getElementById('clientSection').innerHTML='<div class="lw-loading">No data this week</div>';
+    return;
+  }
+
+  var maxHrs = sorted[0].hours;
+  var totalHrs = sorted.reduce(function(s,c){return s+c.hours;},0);
+
+  var rows = sorted.map(function(c){
+    var w = maxHrs > 0 ? (c.hours/maxHrs)*100 : 0;
+    var pct = totalHrs > 0 ? Math.round((c.hours/totalHrs)*100) : 0;
+    return '<div class="client-row">'
+      +'<span class="client-name" title="'+c.client+'">'+c.client+'</span>'
+      +'<div class="client-bar-wrap"><div class="client-bar" style="width:'+w+'%"></div></div>'
+      +'<span class="client-hrs">'+c.hours+'h</span>'
+      +'</div>';
+  }).join('');
+
+  document.getElementById('clientSection').innerHTML = rows;
+}
 
 var TEAM = [
   'Kaisha Fox','Eric Alley','Frank Shawn','Williams Santana',
@@ -273,6 +380,9 @@ function render(data){
   });
   document.getElementById('teamGrid').innerHTML = gridHtml;
 
+  // Utilization + Client Concentration
+  renderUtilization(members);
+  renderClientConcentration(members);
   // Trend chart
   renderTrendChart(members, weekLabels);
 }
