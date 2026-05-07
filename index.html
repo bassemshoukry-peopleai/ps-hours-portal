@@ -466,44 +466,272 @@ function renderEntries(){
   else{
     list.innerHTML=entries.map(function(e,i){
       var cls='ecard'+(e.suggested?' suggested':'');
+
+      // ---- Editing: Other Time per-meeting reassignment ----
       if(e.suggested&&e.editing){
         if(e.isOther && e.meetings && e.meetings.length){
-          // Per-meeting reassignment rows
           var usedProjs=getUsed();
           var projList=ALL_LOADED_PROJECTS.length?ALL_LOADED_PROJECTS:ALL_PROJECTS.map(function(p){return p.project;});
           var projOpts='<option value="">Other Time</option>'+projList.filter(function(p){return p!=='Other Time';}).map(function(p){
             return '<option value="'+p+'">'+p+'</option>';
           }).join('');
           var meetingRows=e.meetings.map(function(m,mi){
-            // Parse hours from meeting string e.g. "Title (Mon 5/4, 1.5h)"
             var hrsMatch=m.match(/,\s*([\d.]+)h\)$/);
             var mhrs=hrsMatch?parseFloat(hrsMatch[1]):0;
-            return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:#fafaf9;border:1px solid #e8e6e1;border-radius:8px">'
-              +'<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m+'</div></div>'
-              +'<select id="ereassign_'+i+'_'+mi+'" style="font-size:12px;padding:5px 8px;border:1px solid #e0deda;border-radius:6px;font-family:inherit;background:#fff;min-width:160px;max-width:200px">'+projOpts+'</select>'
+            return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:var(--g5);border:1px solid var(--g10);border-radius:8px">'
+              +'<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--graphite);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m+'</div></div>'
+              +'<select id="ereassign_'+i+'_'+mi+'" style="font-size:12px;padding:5px 8px;border:1px solid var(--g10);border-radius:6px;font-family:inherit;background:#fff;min-width:160px;max-width:200px">'+projOpts+'</select>'
               +'</div>';
           }).join('');
           return '<div class="'+cls+'"><div class="einfo" style="width:100%">'
             +'<div class="eproj" style="margin-bottom:8px">Other Time<span class="suggbadge">from calendar</span></div>'
-            +'<div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:8px">Assign each meeting to a project</div>'
+            +'<div style="font-size:11px;color:var(--g30);text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:8px">Assign each meeting to a project</div>'
             +meetingRows
             +'<div style="display:flex;gap:8px;margin-top:4px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditingOther('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove all</button></div>'
             +'</div></div>';
         }
         // Non-Other-Time calendar entry edit view
-        var mlines=e.meetings&&e.meetings.length?'<div class="emeta" style="margin-bottom:8px;line-height:1.8;font-size:12px;color:#999">'+e.meetings.join('<br>')+'</div>':'';
-        return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">'+e.project+'<span class="suggbadge">from calendar</span></div>'+mlines+'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><label style="font-size:12px;color:#888;font-weight:500;white-space:nowrap">Hours</label><input type="number" value="'+e.hours+'" min="0.5" max="80" step="0.25" style="font-size:14px;padding:6px 10px;border:1px solid #e0deda;border-radius:8px;width:90px;font-family:inherit" id="ehrs_'+i+'"/></div><div style="margin-bottom:8px"><label style="font-size:12px;color:#888;font-weight:500;display:block;margin-bottom:4px">Notes <span style="font-weight:400;color:#ccc">\u2014 optional</span></label><textarea style="font-size:13px;padding:7px 10px;border:1px solid #e0deda;border-radius:8px;width:100%;font-family:inherit;resize:vertical;min-height:52px" id="enotes_'+i+'">'+e.notes+'</textarea></div><div style="display:flex;gap:8px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditing('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove</button></div></div></div>';
+        var mlines=e.meetings&&e.meetings.length?'<div class="emeta" style="margin-bottom:8px;line-height:1.8;font-size:12px;color:var(--g40)">'+e.meetings.join('<br>')+'</div>':'';
+        return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">'+e.project+'<span class="suggbadge">from calendar</span></div>'+mlines+'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><label style="font-size:12px;color:var(--g40);font-weight:500;white-space:nowrap">Hours</label><input type="number" value="'+e.hours+'" min="0.5" max="80" step="0.25" style="font-size:14px;padding:6px 10px;border:1px solid var(--g10);border-radius:8px;width:90px;font-family:inherit" id="ehrs_'+i+'"/></div><div style="margin-bottom:8px"><label style="font-size:12px;color:var(--g40);font-weight:500;display:block;margin-bottom:4px">Notes — optional</label><textarea style="font-size:13px;padding:7px 10px;border:1px solid var(--g10);border-radius:8px;width:100%;font-family:inherit;resize:vertical;min-height:52px" id="enotes_'+i+'">'+e.notes+'</textarea></div><div style="display:flex;gap:8px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditing('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove</button></div></div></div>';
       }
+
+      // ---- Collapsed: calendar suggestion ----
       if(e.suggested){
         var mc=e.meetings&&e.meetings.length?e.meetings.length+' meeting'+(e.meetings.length>1?'s':''):'';
         var lwh2=lastWeekMap[e.project];
         var dHtml2='';
         if(lwh2!==undefined){
           var diff2=Math.round((e.hours-lwh2)*4)/4;
-          if(diff2>0) dHtml2='<span style="font-family:\'Chivo Mono\',monospace;font-size:10px;font-weight:500;color:#1a7a4a;margin-left:5px">&#9650;'+diff2+'h</span>';
-          else if(diff2<0) dHtml2='<span style="font-family:\'Chivo Mono\',monospace;font-size:10px;font-weight:500;color:#c0392b;margin-left:5px">&#9660;'+Math.abs(diff2)+'h</span>';
-          else dHtml2='<span style="font-family:\'Chivo Mono\',monospace;font-size:10px;color:var(--graphite-30);margin-left:5px">&#9644;</span>';
+          if(diff2>0) dHtml2='<span style="font-size:10px;font-weight:500;color:#1a7a4a;margin-left:5px">▲'+diff2+'h</span>';
+          else if(diff2<0) dHtml2='<span style="font-size:10px;font-weight:500;color:#c0392b;margin-left:5px">▼'+Math.abs(diff2)+'h</span>';
+          else dHtml2='<span style="font-size:10px;color:var(--g30);margin-left:5px">▬</span>';
         }
         var metaSub2=lwh2!==undefined?mc+' · '+lwh2+'h last wk':mc;
-        return '<div class="'+cls+'" style="cursor:pointer" onclick="startEditing('+i+')"><div class="einfo"><div class="eproj">'+e.project+'<span class="suggbadge">from calendar</span>'+dHtml2+'</div><div class="emeta">'+metaSub2+' — tap to review &amp; edit</div></div><div class="ehrs">'+e.hours+'<br><span>hrs</span></div><button class="erm" onclick="event.stopPropagation();removeEntry('+i+')" title="Remove">\xD7</button></div>';
+        return '<div class="'+cls+'" style="cursor:pointer" onclick="startEditing('+i+')"><div class="einfo"><div class="eproj">'+e.project+'<span class="suggbadge">from calendar</span>'+dHtml2+'</div><div class="emeta">'+metaSub2+' — tap to review &amp; edit</div></div><div class="ehrs">'+e.hours+'<br><span>hrs</span></div><button class="erm" onclick="event.stopPropagation();removeEntry('+i+')" title="Remove">×</button></div>';
       }
+
+      // ---- Manual entry ----
+      var nb=e.notes?'<span class="notebadge">note</span>':'';
+      var lwh=lastWeekMap[e.project];
+      var dHtml='';
+      if(lwh!==undefined){
+        var diff=Math.round((e.hours-lwh)*4)/4;
+        if(diff>0) dHtml='<span style="font-size:10px;font-weight:500;color:#1a7a4a;margin-left:5px">▲'+diff+'h</span>';
+        else if(diff<0) dHtml='<span style="font-size:10px;font-weight:500;color:#c0392b;margin-left:5px">▼'+Math.abs(diff)+'h</span>';
+        else dHtml='<span style="font-size:10px;color:var(--g30);margin-left:5px">▬</span>';
+      }
+      var metaSub=lwh!==undefined?' · '+lwh+'h last wk':'';
+      return '<div class="'+cls+'"><div class="einfo"><div class="eproj">'+e.project+nb+dHtml+'</div><div class="emeta">'+(ACCT_MAP[e.project]||'')+metaSub+'</div>'+(e.notes?'<div class="enotes">'+e.notes+'</div>':'')+  '</div><div class="ehrs">'+e.hours+'<br><span>hrs</span></div><button class="erm" onclick="removeEntry('+i+')" title="Remove">×</button></div>';
+    }).join('');
+  }
+  var total=entries.reduce(function(s,e){return s+e.hours;},0);
+  document.getElementById('totalHrs').innerHTML=total+'<span style="font-size:13px;color:var(--g30);font-weight:400"> hrs</span>';
+}
+
+
+function startEditing(i){entries[i].editing=true;renderEntries();}
+function doneEditing(i){
+  var hEl=document.getElementById('ehrs_'+i);
+  var nEl=document.getElementById('enotes_'+i);
+  if(hEl){var h=parseFloat(hEl.value);if(!isNaN(h)&&h>0)entries[i].hours=Math.round(h*4)/4;}
+  if(nEl)entries[i].notes=nEl.value;
+  entries[i].editing=false;
+  renderEntries();
+}
+
+function doneEditingOther(i){
+  var e=entries[i];
+  if(!e||!e.meetings) return;
+  var toAdd={};
+  var otherHours=0;
+  e.meetings.forEach(function(m,mi){
+    var sel=document.getElementById('ereassign_'+i+'_'+mi);
+    var proj=sel?sel.value:'';
+    var hrsMatch=m.match(/,\s*([\d.]+)h\)$/);
+    var mhrs=hrsMatch?parseFloat(hrsMatch[1]):0;
+    if(proj&&proj!=='Other Time'){
+      if(!toAdd[proj]) toAdd[proj]={hours:0,meetings:[]};
+      toAdd[proj].hours+=mhrs;
+      toAdd[proj].meetings.push(m);
+    } else { otherHours+=mhrs; }
+  });
+  entries.splice(i,1);
+  Object.keys(toAdd).forEach(function(proj){
+    var d=toAdd[proj];
+    var hrs=Math.round(d.hours*4)/4;
+    var existing=-1;
+    entries.forEach(function(en,idx){if(en.project===proj)existing=idx;});
+    if(existing!==-1){ entries[existing].hours=Math.round((entries[existing].hours+hrs)*4)/4; }
+    else { entries.push({project:proj,account:ACCT_MAP[proj]||'',hours:hrs,notes:d.meetings.join('; '),meetings:d.meetings,suggested:true,editing:false}); }
+  });
+  if(otherHours>0){
+    var remainMeetings=[];
+    e.meetings.forEach(function(m,mi){
+      var sel=document.getElementById('ereassign_'+i+'_'+mi);
+      var proj=sel?sel.value:'';
+      if(!proj||proj==='Other Time') remainMeetings.push(m);
+    });
+    entries.push({project:'Other Time',account:'Internal',hours:Math.round(otherHours*4)/4,notes:'',meetings:remainMeetings,suggested:true,editing:false,isOther:true});
+  }
+  renderEntries();
+}
+
+function getUsed(){var s={};entries.forEach(function(e){s[e.project]=1;});return s;}
+
+function showAdd(){
+  if(addOpen)return; addOpen=true;
+  document.getElementById('btnAdd').style.display='none';
+  var owner=currentOwner,mine=PERSON_PROJECTS[owner]||[],others=[],used=getUsed();
+  var mineSet={};mine.forEach(function(p){mineSet[p]=1;});
+  ALL_PROJECTS.forEach(function(p){if(!mineSet[p.project])others.push(p);});
+  var myOpts=mine.map(function(p){return '<option value="'+p+'"'+(used[p]?' disabled':'')+'>'+p+(used[p]?' (added)':'')+'</option>';}).join('');
+  var otherOpts=others.map(function(p){return '<option value="'+p.project+'"'+(used[p.project]?' disabled':'')+'>'+p.project+(used[p.project]?' (added)':'')+'</option>';}).join('');
+  document.getElementById('addContainer').innerHTML='<div class="overlay"><div class="slabel" style="font-size:11px;font-weight:500;letter-spacing:.07em;color:var(--g30);text-transform:uppercase;margin-bottom:.875rem">New entry</div><div class="rowfull"><div class="fld"><label>Project</label><select id="newProj"><option value="">Select a project...</option>'+(mine.length?'<optgroup label="— Your projects —">'+myOpts+'</optgroup>':'')+'<optgroup label="— All other projects —">'+otherOpts+'</optgroup></select></div></div><div class="rowfull"><div class="fld"><label>Actual hours</label><input type="number" id="newHrs" placeholder="e.g. 4.5" min="0.5" max="80" step="0.5"/></div></div><div class="rowfull"><div class="fld"><label>Notes — optional</label><textarea id="newNotes" placeholder="What did you work on?"></textarea></div></div><div class="oacts"><button class="btnok" onclick="addEntry()">Add entry</button><button class="btncancel" onclick="hideAdd()">Cancel</button></div></div>';
+}
+
+function hideAdd(){addOpen=false;document.getElementById('addContainer').innerHTML='';document.getElementById('btnAdd').style.display='block';}
+
+function addEntry(){
+  var proj=document.getElementById('newProj').value;
+  var hrs=parseFloat(document.getElementById('newHrs').value);
+  var notes=document.getElementById('newNotes').value.trim();
+  if(!proj){alert('Please select a project.');return;}
+  if(getUsed()[proj]){alert('Already added.');return;}
+  if(isNaN(hrs)||hrs<=0){alert('Please enter valid hours.');return;}
+  entries.push({project:proj,account:ACCT_MAP[proj]||'',hours:hrs,notes:notes});
+  hideAdd(); renderEntries();
+}
+
+function removeEntry(i){entries.splice(i,1);renderEntries();}
+
+function loadCalendar(){
+  if(!currentOwner){alert('Please select your name first.');return;}
+  var rawDate=document.getElementById('weekDate').value;
+  if(!rawDate){alert('Please select a week first.');return;}
+  var btn=document.getElementById('btnCal');
+  btn.disabled=true; btn.textContent='Connecting to Google...';
+  if(calToken){
+    fetchCalendarEvents(rawDate,btn);
+  } else {
+    var client=google.accounts.oauth2.initTokenClient({
+      client_id:OAUTH_CLIENT_ID,
+      scope:'https://www.googleapis.com/auth/calendar.readonly',
+      callback:function(response){
+        if(response.error){btn.disabled=false;btn.textContent='\uD83D\uDCC5 Suggest from calendar';showStatus('Sign-in failed: '+response.error,'err');return;}
+        calToken=response.access_token;
+        sessionStorage.setItem('calToken',calToken);
+        fetchCalendarEvents(rawDate,btn);
+      }
+    });
+    client.requestAccessToken();
+  }
+}
+
+function fetchCalendarEvents(rawDate,btn){
+  btn.textContent='Reading calendar...';
+  var monday=getMonday(new Date(rawDate+'T12:00:00'));
+  var friday=new Date(monday); friday.setDate(monday.getDate()+5);
+  var url='https://www.googleapis.com/calendar/v3/calendars/primary/events'
+    +'?timeMin='+encodeURIComponent(monday.toISOString())
+    +'&timeMax='+encodeURIComponent(friday.toISOString())
+    +'&singleEvents=true&orderBy=startTime&maxResults=100';
+  fetch(url,{headers:{'Authorization':'Bearer '+calToken}})
+    .then(function(r){
+      if(r.status===401){calToken=null;sessionStorage.removeItem('calToken');btn.disabled=false;btn.textContent='\uD83D\uDCC5 Suggest from calendar';showStatus('Session expired — please click again.','warn');return null;}
+      return r.json();
+    })
+    .then(function(data){
+      if(!data)return;
+      btn.disabled=false; btn.textContent='\uD83D\uDCC5 Suggest from calendar';
+      processCal(data.items||[]);
+    })
+    .catch(function(err){btn.disabled=false;btn.textContent='\uD83D\uDCC5 Suggest from calendar';showStatus('Calendar error: '+err.message,'err');});
+}
+
+function matchProject(titleLow, projects) {
+  function tokenize(s) { return s.toLowerCase().replace(/[-\/+,&.]/g,' ').split(/\s+/).filter(function(t){return t.length>=3;}); }
+  var stop={the:1,and:1,for:1,with:1,from:1,forensics:1,forecasting:1,premium:1,enterprise:1,deployment:1,global:1,support:1,project:1,management:1,assessment:1,reengagement:1,migration:1,onboarding:1,matching:1,salesai:1,data:1,foundation:1,intelligence:1,account:1,ongoing:1,post:1,going:1,consulting:1,opportunity:1,land:1,opp:1,intel:1,signals:1,questions:1,scorecard:1,assist:1,poc:1,service:1,services:1,mcp:1,new:1,user:1};
+  var titleTokens=tokenize(titleLow).filter(function(t){return !stop[t];});
+  if(!titleTokens.length) return null;
+  var best=null,bestScore=0;
+  projects.forEach(function(proj){
+    var clientPart=proj.indexOf(' - ')!==-1?proj.split(' - ')[0]:proj;
+    var clientTokens=tokenize(clientPart).filter(function(t){return !stop[t];});
+    if(!clientTokens.length) return;
+    var matches=0;
+    clientTokens.forEach(function(ct){titleTokens.forEach(function(tt){if(ct===tt)matches++;});});
+    if(matches===0) return;
+    var required=clientTokens.length<=2?clientTokens.length:Math.ceil(clientTokens.length*0.6);
+    if(matches<required) return;
+    var score=matches/clientTokens.length;
+    if(score>bestScore){bestScore=score;best=proj;}
+  });
+  return best;
+}
+
+function processCal(events){
+  var projects=ALL_LOADED_PROJECTS.length?ALL_LOADED_PROJECTS:ALL_PROJECTS.map(function(p){return p.project;});
+  var projectMap={};
+  events.forEach(function(ev){
+    if(!ev.start||!ev.start.dateTime)return;
+    if(ev.attendees){for(var i=0;i<ev.attendees.length;i++){if(ev.attendees[i].self&&ev.attendees[i].responseStatus==='declined')return;}}
+    var start=new Date(ev.start.dateTime),end=new Date(ev.end.dateTime);
+    var mins=(end-start)/60000;
+    if(mins<5)return;
+    var hrs=Math.round((mins/60)*4)/4;
+    var title=ev.summary||'(no title)';
+    var matched=matchProject(title.toLowerCase(),projects);
+    if(!matched)matched='Other Time';
+    if(!projectMap[matched])projectMap[matched]={hours:0,meetings:[],isOther:false};
+    if(matched==='Other Time')projectMap[matched].isOther=true;
+    projectMap[matched].hours+=hrs;
+    var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    projectMap[matched].meetings.push(title+' ('+days[start.getDay()]+' '+(start.getMonth()+1)+'/'+start.getDate()+', '+hrs+'h)');
+  });
+  var used=getUsed(),added=0,skipped=0;
+  Object.keys(projectMap).forEach(function(proj){
+    if(used[proj]){skipped++;return;}
+    var d=projectMap[proj];
+    var hrs=Math.round(d.hours*4)/4;
+    var seen={};var dedupedTitles=[];
+    d.meetings.forEach(function(m){var t=m.replace(/\s*\([A-Za-z]+\s+\d+\/\d+,\s*[\d.]+h\)$/,'').trim();if(!seen[t]){seen[t]=1;dedupedTitles.push(t);}});
+    var entryNotes=d.isOther?'':dedupedTitles.join('; ');
+    entries.push({project:proj,account:ACCT_MAP[proj]||'',hours:hrs,notes:entryNotes,meetings:d.meetings,suggested:true,editing:false,isOther:d.isOther});
+    added++;
+  });
+  renderEntries();
+  if(added===0&&skipped===0)showStatus('No meetings found for this week.','warn');
+  else if(added===0)showStatus('All suggested projects already added.','warn');
+  else showStatus('Added '+added+' suggestion'+(added>1?'s':'')+' from calendar. Tap each to review.','ok');
+}
+
+function doSubmit(){
+  var owner=document.getElementById('ownerSel').value;
+  if(!owner){alert('Please select your name.');return;}
+  if(!entries.length){alert('Please add at least one entry.');return;}
+  var rawDate=document.getElementById('weekDate').value;
+  var weekISO=fmtISO(getMonday(new Date(rawDate+'T12:00:00')));
+  var btn=document.getElementById('btnSubmit');
+  btn.disabled=true; btn.textContent='Submitting...';
+  showStatus('Writing to Google Sheet...','load');
+  var payload={entries:entries.map(function(e){return{project:e.project,account:e.account,owner:owner,weekISO:weekISO,hours:e.hours,notes:e.notes||''};})};
+  fetch(WEBHOOK_URL,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}})
+    .then(function(r){return r.json();})
+    .then(function(result){
+      if(result.status===200){
+        showStatus('\u2713 '+result.message+' Week of '+fmtD(getMonday(new Date(rawDate+'T12:00:00')))+', logged for '+owner+'.','ok');
+        entries=[];lwLoaded=false;renderEntries();btn.textContent='Submit another week';
+      } else{showStatus('Partial: '+result.message,'err');btn.textContent='Retry';}
+      btn.disabled=false;
+    })
+    .catch(function(err){showStatus('Submission failed: '+err.message,'err');btn.textContent='Retry';btn.disabled=false;});
+}
+
+function showStatus(msg,type){
+  var el=document.getElementById('statusMsg');
+  el.className='status s-'+type;el.textContent=msg;el.style.display='block';
+  if(type==='ok')setTimeout(function(){el.style.display='none';},10000);
+}
+</script>
+</body>
+</html>
