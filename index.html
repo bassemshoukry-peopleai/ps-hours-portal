@@ -464,72 +464,58 @@ function removeEntry(i){entries.splice(i,1);renderEntries();}
 
 function renderEntries(){
   var list=document.getElementById('eList');
-  if(!entries.length){list.innerHTML='<p class="empty-state">No entries yet — add manually or import from calendar below.</p>';}
+  if(!entries.length){list.innerHTML='<p class="empty-state">No entries yet \u2014 add manually or import from calendar below.</p>';}
   else{
     list.innerHTML=entries.map(function(e,i){
       var cls='ecard'+(e.suggested?' suggested':'');
 
-      // ---- Editing: Other Time per-meeting reassignment ----
+      // Editing: Other Time per-meeting reassignment
       if(e.suggested&&e.editing){
         if(e.isOther && e.meetings && e.meetings.length){
           var usedProjs=getUsed();
           var projList=ALL_LOADED_PROJECTS.length?ALL_LOADED_PROJECTS:ALL_PROJECTS.map(function(p){return p.project;});
-          var projOpts='<option value="" selected>Other Time</option><option value="__ignore__">— Ignore (exclude)</option>'+projList.filter(function(p){return p!=='Other Time';}).map(function(p){
-            return '<option value="'+p+'">'+p+'</option>';
-          }).join('');
+          var projOpts='<option value="" selected>Other Time</option><option value="__ignore__">\u2014 Ignore (exclude)</option>'+projList.filter(function(p){return p!=='Other Time';}).map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
           var meetingRows=e.meetings.map(function(m,mi){
-            var hrsMatch=m.match(/,\s*([\d.]+)h\)$/);
-            var mhrs=hrsMatch?parseFloat(hrsMatch[1]):0;
-            return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:var(--g5);border:1px solid var(--g10);border-radius:8px">'
-              +'<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--graphite);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m+'</div></div>'
-              +'<select id="ereassign_'+i+'_'+mi+'" style="font-size:12px;padding:5px 8px;border:1px solid var(--g10);border-radius:6px;font-family:inherit;background:#fff;min-width:160px;max-width:200px">'+projOpts+'</select>'
-              +'</div>';
+            return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:var(--graphite-5);border:1px solid var(--graphite-10);border-radius:8px"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--graphite);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m+'</div></div><select id="ereassign_'+i+'_'+mi+'" style="font-size:12px;padding:5px 8px;border:1px solid var(--graphite-10);border-radius:6px;font-family:inherit;background:#fff;min-width:160px;max-width:200px">'+projOpts+'</select></div>';
           }).join('');
-          return '<div class="'+cls+'"><div class="einfo" style="width:100%">'
-            +'<div class="eproj" style="margin-bottom:8px">Other Time<span class="suggbadge">from calendar</span></div>'
-            +'<div style="font-size:11px;color:var(--g30);text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:8px">Assign each meeting to a project</div>'
-            +meetingRows
-            +'<div style="display:flex;gap:8px;margin-top:4px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditingOther('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove all</button></div>'
-            +'</div></div>';
+          return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">Other Time<span class="suggbadge">from calendar</span></div><div style="font-size:11px;color:var(--graphite-30);text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:8px">Assign each meeting to a project</div>'+meetingRows+'<div style="display:flex;gap:8px;margin-top:4px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditingOther('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove all</button></div></div></div>';
         }
-        // Non-Other-Time calendar entry edit view
-        var mlines=e.meetings&&e.meetings.length?'<div class="emeta" style="margin-bottom:8px;line-height:1.8;font-size:12px;color:var(--g40)">'+e.meetings.join('<br>')+'</div>':'';
-        return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">'+e.project+'<span class="suggbadge">from calendar</span></div>'+mlines+'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><label style="font-size:12px;color:var(--g40);font-weight:500;white-space:nowrap">Hours</label><input type="number" value="'+e.hours+'" min="0.5" max="80" step="0.25" style="font-size:14px;padding:6px 10px;border:1px solid var(--g10);border-radius:8px;width:90px;font-family:inherit" id="ehrs_'+i+'"/></div><div style="margin-bottom:8px"><label style="font-size:12px;color:var(--g40);font-weight:500;display:block;margin-bottom:4px">Notes — optional</label><textarea style="font-size:13px;padding:7px 10px;border:1px solid var(--g10);border-radius:8px;width:100%;font-family:inherit;resize:vertical;min-height:52px" id="enotes_'+i+'">'+e.notes+'</textarea></div><div style="display:flex;gap:8px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditing('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove</button></div></div></div>';
+        var mlines=e.meetings&&e.meetings.length?'<div class="emeta" style="margin-bottom:8px;line-height:1.8;font-size:12px;color:var(--graphite-40)">'+e.meetings.join('<br>')+'</div>':'';
+        return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">'+e.project+'<span class="suggbadge">from calendar</span></div>'+mlines+'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><label style="font-size:12px;color:var(--graphite-40);font-weight:500;white-space:nowrap">Hours</label><input type="number" value="'+e.hours+'" min="0.5" max="80" step="0.25" style="font-size:14px;padding:6px 10px;border:1px solid var(--graphite-10);border-radius:8px;width:90px;font-family:inherit" id="ehrs_'+i+'"/></div><div style="margin-bottom:8px"><label style="font-size:12px;color:var(--graphite-40);font-weight:500;display:block;margin-bottom:4px">Notes \u2014 optional</label><textarea style="font-size:13px;padding:7px 10px;border:1px solid var(--graphite-10);border-radius:8px;width:100%;font-family:inherit;resize:vertical;min-height:52px" id="enotes_'+i+'">'+e.notes+'</textarea></div><div style="display:flex;gap:8px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditing('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove</button></div></div></div>';
       }
 
-      // ---- Collapsed: calendar suggestion ----
+      // Collapsed: calendar suggestion
       if(e.suggested){
         var mc=e.meetings&&e.meetings.length?e.meetings.length+' meeting'+(e.meetings.length>1?'s':''):'';
         var lwh2=lastWeekMap[e.project];
         var dHtml2='';
         if(lwh2!==undefined){
           var diff2=Math.round((e.hours-lwh2)*4)/4;
-          if(diff2>0) dHtml2='<span style="font-size:10px;font-weight:500;color:#1a7a4a;margin-left:5px">▲'+diff2+'h</span>';
-          else if(diff2<0) dHtml2='<span style="font-size:10px;font-weight:500;color:#c0392b;margin-left:5px">▼'+Math.abs(diff2)+'h</span>';
-          else dHtml2='<span style="font-size:10px;color:var(--g30);margin-left:5px">▬</span>';
+          if(diff2>0) dHtml2='<span style="font-size:10px;font-weight:500;color:#1a7a4a">\u25b2'+diff2+'h</span>';
+          else if(diff2<0) dHtml2='<span style="font-size:10px;font-weight:500;color:#c0392b">\u25bc'+Math.abs(diff2)+'h</span>';
+          else dHtml2='<span style="font-size:10px;color:var(--graphite-30)">\u25ac</span>';
         }
-        var metaSub2=lwh2!==undefined?mc+' · '+lwh2+'h last wk':mc;
-        return '<div class="'+cls+'" style="cursor:pointer" onclick="startEditing('+i+')"><div class="einfo"><div class="eproj">'+e.project+'<span class="suggbadge">from calendar</span>'+dHtml2+'</div><div class="emeta">'+metaSub2+' — tap to review &amp; edit</div></div><div class="ehrs">'+e.hours+'<br><span>hrs</span></div><button class="erm" onclick="event.stopPropagation();removeEntry('+i+')" title="Remove">×</button></div>';
+        var metaSub2=lwh2!==undefined?mc+' \xb7 '+lwh2+'h last wk':mc;
+        return '<div class="'+cls+'" style="cursor:pointer" onclick="startEditing('+i+')"><div class="einfo"><div class="eproj">'+e.project+'<span class="suggbadge">from calendar</span></div><div class="emeta">'+metaSub2+' \u2014 tap to review &amp; edit</div></div><div style="text-align:right;min-width:56px;flex-shrink:0"><div class="ehrs">'+e.hours+'<br><span>hrs</span></div>'+(dHtml2?'<div style="margin-top:2px">'+dHtml2+'</div>':'')+' </div><button class="erm" onclick="event.stopPropagation();removeEntry('+i+')" title="Remove">\xd7</button></div>';
       }
 
-      // ---- Manual entry ----
+      // Manual entry
       var nb=e.notes?'<span class="notebadge">note</span>':'';
       var lwh=lastWeekMap[e.project];
       var dHtml='';
       if(lwh!==undefined){
         var diff=Math.round((e.hours-lwh)*4)/4;
-        if(diff>0) dHtml='<span style="font-size:10px;font-weight:500;color:#1a7a4a;margin-left:5px">▲'+diff+'h</span>';
-        else if(diff<0) dHtml='<span style="font-size:10px;font-weight:500;color:#c0392b;margin-left:5px">▼'+Math.abs(diff)+'h</span>';
-        else dHtml='<span style="font-size:10px;color:var(--g30);margin-left:5px">▬</span>';
+        if(diff>0) dHtml='<span style="font-size:10px;font-weight:500;color:#1a7a4a">\u25b2'+diff+'h</span>';
+        else if(diff<0) dHtml='<span style="font-size:10px;font-weight:500;color:#c0392b">\u25bc'+Math.abs(diff)+'h</span>';
+        else dHtml='<span style="font-size:10px;color:var(--graphite-30)">\u25ac</span>';
       }
-      var metaSub=lwh!==undefined?' · '+lwh+'h last wk':'';
-      return '<div class="'+cls+'"><div class="einfo"><div class="eproj">'+e.project+nb+dHtml+'</div><div class="emeta">'+(ACCT_MAP[e.project]||'')+metaSub+'</div>'+(e.notes?'<div class="enotes">'+e.notes+'</div>':'')+  '</div><div class="ehrs">'+e.hours+'<br><span>hrs</span></div><button class="erm" onclick="removeEntry('+i+')" title="Remove">×</button></div>';
+      var metaSub=lwh!==undefined?' \xb7 '+lwh+'h last wk':'';
+      return '<div class="'+cls+'"><div class="einfo"><div class="eproj">'+e.project+nb+'</div><div class="emeta">'+(ACCT_MAP[e.project]||'')+metaSub+'</div>'+(e.notes?'<div class="enotes">'+e.notes+'</div>':'')+  '</div><div style="text-align:right;min-width:56px;flex-shrink:0"><div class="ehrs">'+e.hours+'<br><span>hrs</span></div>'+(dHtml?'<div style="margin-top:2px">'+dHtml+'</div>':'')+' </div><button class="erm" onclick="removeEntry('+i+')" title="Remove">\xd7</button></div>';
     }).join('');
   }
   var total=entries.reduce(function(s,e){return s+e.hours;},0);
-  document.getElementById('totalHrs').innerHTML=total+'<span style="font-size:13px;color:var(--g30);font-weight:400"> hrs</span>';
+  document.getElementById('totalHrs').innerHTML=total+'<span style="font-size:13px;color:var(--graphite-30);font-weight:400"> hrs</span>';
 }
-
 
 function startEditing(i){entries[i].editing=true;renderEntries();}
 function doneEditing(i){
@@ -678,6 +664,8 @@ function processCal(events){
   var projectMap={};
   events.forEach(function(ev){
     if(!ev.start||!ev.start.dateTime)return;
+    // Skip private/confidential events
+    if(ev.visibility==='private'||ev.visibility==='confidential')return;
     if(ev.attendees){for(var i=0;i<ev.attendees.length;i++){if(ev.attendees[i].self&&ev.attendees[i].responseStatus==='declined')return;}}
     var start=new Date(ev.start.dateTime),end=new Date(ev.end.dateTime);
     var mins=(end-start)/60000;
