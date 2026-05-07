@@ -474,7 +474,7 @@ function renderEntries(){
         if(e.isOther && e.meetings && e.meetings.length){
           var usedProjs=getUsed();
           var projList=ALL_LOADED_PROJECTS.length?ALL_LOADED_PROJECTS:ALL_PROJECTS.map(function(p){return p.project;});
-          var projOpts='<option value="__ignore__">— Ignore (exclude)</option><option value="">Other Time</option>'+projList.filter(function(p){return p!=='Other Time';}).map(function(p){
+          var projOpts='<option value="" selected>Other Time</option><option value="__ignore__">— Ignore (exclude)</option>'+projList.filter(function(p){return p!=='Other Time';}).map(function(p){
             return '<option value="'+p+'">'+p+'</option>';
           }).join('');
           var meetingRows=e.meetings.map(function(m,mi){
