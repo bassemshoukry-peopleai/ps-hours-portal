@@ -74,6 +74,10 @@
   .hours-sep{font-size:14px;color:var(--g20)}
   .hours-planned{font-size:14px;color:var(--g40);font-weight:400}
   .hours-unit{font-size:12px;color:var(--g30);margin-left:2px}
+  .delta{font-size:12px;font-weight:500;margin-left:8px;display:inline-flex;align-items:center;gap:2px}
+  .delta-up{color:#1a7a4a}
+  .delta-down{color:#8b2020}
+  .delta-flat{color:var(--g30)}
 
   /* Progress bar */
   .progress-wrap{height:4px;background:var(--g10);border-radius:2px;margin-bottom:12px;overflow:hidden}
@@ -316,11 +320,17 @@ function renderPersonCard(m){
     +'<span class="person-name">'+m.name+'</span>'
     +'<span class="person-status status-'+statusClass+'">'+statusLabel+'</span>'
     +'</div>'
-    +'<div class="hours-row">'
-    +'<span class="hours-actual">'+actual+'</span>'
-    +(planned?'<span class="hours-sep">/</span><span class="hours-planned">'+planned+'</span>':'')
-    +'<span class="hours-unit">hrs</span>'
-    +'</div>'
+        +(function(){
+      var lastWeekActual = m.trend && m.trend.length>=2 ? m.trend[m.trend.length-2] : null;
+      var delta = (lastWeekActual!==null && actual>0) ? Math.round((actual-lastWeekActual)*4)/4 : null;
+      var deltaHtml='';
+      if(delta!==null){
+        if(delta>0) deltaHtml='<span class="delta delta-up">&#9650; '+delta+'h</span>';
+        else if(delta<0) deltaHtml='<span class="delta delta-down">&#9660; '+Math.abs(delta)+'h</span>';
+        else deltaHtml='<span class="delta delta-flat">&#9644; same</span>';
+      }
+      return '<div class="hours-row"><span class="hours-actual">'+actual+'</span><span class="hours-sep">/</span><span class="hours-planned">40</span><span class="hours-unit">hrs</span>'+deltaHtml+'</div>';
+    })()
     +'<div class="progress-wrap"><div class="progress-fill '+fillClass+'" style="width:'+pct+'%"></div></div>'
     +'<div class="sparkline-wrap"><canvas id="'+sparkId+'" height="40"></canvas></div>'
     +(breakdownHtml?'<div class="breakdown">'+breakdownHtml+'</div>':'')
