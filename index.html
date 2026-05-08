@@ -480,11 +480,13 @@ function renderEntries(){
           }).join('');
           return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">Other Time<span class="suggbadge">from calendar</span></div><div style="font-size:11px;color:var(--graphite-30);text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:8px">Assign each meeting to a project</div>'+meetingRows+'<div style="display:flex;gap:8px;margin-top:4px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditingOther('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove all</button></div></div></div>';
         }
-        var mlines=e.meetings&&e.meetings.length?'<div class="emeta" style="margin-bottom:8px;line-height:1.8;font-size:12px;color:var(--graphite-40)">'+e.meetings.join('<br>')+'</div>':'';
-        var usedProjs2=getUsed();
-        var projList2=ALL_LOADED_PROJECTS.length?ALL_LOADED_PROJECTS:ALL_PROJECTS.map(function(p){return p.project;});
-        var reassignOpts2='<option value="">Keep as: '+e.project+'</option>'+projList2.filter(function(p){return p!==e.project;}).map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
-        return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">'+e.project+'<span class="suggbadge">from calendar</span></div>'+mlines+'<div style="margin-bottom:8px"><label style="font-size:12px;color:var(--graphite-40);font-weight:500;display:block;margin-bottom:4px">Reassign to different project</label><select id="ereassign2_'+i+'" style="font-size:13px;padding:7px 10px;border:1px solid var(--graphite-10);border-radius:8px;width:100%;font-family:inherit;background:#fff">'+reassignOpts2+'</select></div><div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><label style="font-size:12px;color:var(--graphite-40);font-weight:500;white-space:nowrap">Hours</label><input type="number" value="'+e.hours+'" min="0.5" max="80" step="0.25" style="font-size:14px;padding:6px 10px;border:1px solid var(--graphite-10);border-radius:8px;width:90px;font-family:inherit" id="ehrs_'+i+'"/></div><div style="margin-bottom:8px"><label style="font-size:12px;color:var(--graphite-40);font-weight:500;display:block;margin-bottom:4px">Notes — optional</label><textarea style="font-size:13px;padding:7px 10px;border:1px solid var(--graphite-10);border-radius:8px;width:100%;font-family:inherit;resize:vertical;min-height:52px" id="enotes_'+i+'">'+e.notes+'</textarea></div><div style="display:flex;gap:8px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditing('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove</button></div></div></div>';
+        var projList3=ALL_LOADED_PROJECTS.length?ALL_LOADED_PROJECTS:ALL_PROJECTS.map(function(p){return p.project;});
+        var projOpts3='<option value="" selected>Keep as: '+e.project+'</option><option value="__ignore__">— Ignore (exclude)</option>'+projList3.filter(function(p){return p!==e.project;}).map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
+        var meetingRows3=e.meetings.map(function(m,mi){
+          var hrsMatch=m.match(/,\s*([\d.]+)h\)$/);
+          return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:var(--graphite-5);border:1px solid var(--graphite-10);border-radius:8px"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--graphite);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m+'</div></div><select id="ereassign3_'+i+'_'+mi+'" style="font-size:12px;padding:5px 8px;border:1px solid var(--graphite-10);border-radius:6px;font-family:inherit;background:#fff;min-width:160px;max-width:200px">'+projOpts3+'</select></div>';
+        }).join('');
+        return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">'+e.project+'<span class="suggbadge">from calendar</span></div><div style="font-size:11px;color:var(--graphite-30);text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:8px">Assign each meeting</div>'+meetingRows3+'<div style="margin-bottom:8px"><label style="font-size:12px;color:var(--graphite-40);font-weight:500;display:block;margin-bottom:4px">Notes — optional</label><textarea style="font-size:13px;padding:7px 10px;border:1px solid var(--graphite-10);border-radius:8px;width:100%;font-family:inherit;resize:vertical;min-height:52px" id="enotes_'+i+'">'+e.notes+'</textarea></div><div style="display:flex;gap:8px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditingMatched('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove</button></div></div></div>';
       }
 
       // Collapsed: calendar suggestion
@@ -518,6 +520,56 @@ function renderEntries(){
   }
   var total=entries.reduce(function(s,e){return s+e.hours;},0);
   document.getElementById('totalHrs').innerHTML=total+'<span style="font-size:13px;color:var(--graphite-30);font-weight:400"> hrs</span>';
+}
+
+function doneEditingMatched(i){
+  var e=entries[i];
+  if(!e||!e.meetings) return;
+  var nEl=document.getElementById('enotes_'+i);
+  var baseNotes=nEl?nEl.value:e.notes;
+  var toAdd={}; // project -> {hours, meetings[]}
+  var keepHours=0, keepMeetings=[];
+
+  e.meetings.forEach(function(m,mi){
+    var sel=document.getElementById('ereassign3_'+i+'_'+mi);
+    var proj=sel?sel.value:'';
+    var hrsMatch=m.match(/,\s*([\d.]+)h\)$/);
+    var mhrs=hrsMatch?parseFloat(hrsMatch[1]):0;
+    if(proj==='__ignore__') return; // skip
+    if(proj && proj!==e.project){
+      if(!toAdd[proj]) toAdd[proj]={hours:0,meetings:[]};
+      toAdd[proj].hours+=mhrs;
+      toAdd[proj].meetings.push(m);
+    } else {
+      keepHours+=mhrs;
+      keepMeetings.push(m);
+    }
+  });
+
+  // Update or remove the original entry
+  if(keepHours>0){
+    entries[i].hours=Math.round(keepHours*4)/4;
+    entries[i].meetings=keepMeetings;
+    entries[i].notes=baseNotes;
+    entries[i].editing=false;
+  } else {
+    entries.splice(i,1);
+  }
+
+  // Add reassigned entries (merge if project already exists)
+  Object.keys(toAdd).forEach(function(proj){
+    var d=toAdd[proj];
+    var hrs=Math.round(d.hours*4)/4;
+    var existing=-1;
+    entries.forEach(function(en,idx){if(en.project===proj)existing=idx;});
+    if(existing!==-1){
+      entries[existing].hours=Math.round((entries[existing].hours+hrs)*4)/4;
+    } else {
+      entries.push({project:proj,account:ACCT_MAP[proj]||'',hours:hrs,notes:d.meetings.join('; '),meetings:d.meetings,suggested:true,editing:false});
+    }
+  });
+
+  renderEntries();
 }
 
 function startEditing(i){entries[i].editing=true;renderEntries();}
