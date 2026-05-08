@@ -441,8 +441,12 @@ function showAdd(){
   if(addOpen)return; addOpen=true;
   document.getElementById('btnAdd').style.display='none';
   var owner=currentOwner,mine=PERSON_PROJECTS[owner]||[],others=[],used=getUsed();
+  // Use active projects from sheet if loaded, otherwise fall back to hardcoded list
+  var activeList=ALL_LOADED_PROJECTS.length?ALL_LOADED_PROJECTS:ALL_PROJECTS.map(function(p){return p.project;});
   var mineSet={};mine.forEach(function(p){mineSet[p]=1;});
-  ALL_PROJECTS.forEach(function(p){if(!mineSet[p.project])others.push(p);});
+  // Filter mine to active only
+  mine=mine.filter(function(p){return activeList.indexOf(p)!==-1;});
+  activeList.forEach(function(p){if(!mineSet[p]&&p!=='Other Time')others.push({project:p,account:ACCT_MAP[p]||''});});
   var myOpts=mine.map(function(p){return '<option value="'+p+'"'+(used[p]?' disabled':'')+'>'+p+(used[p]?' (added)':'')+'</option>';}).join('');
   var otherOpts=others.map(function(p){return '<option value="'+p.project+'"'+(used[p.project]?' disabled':'')+'>'+p.project+(used[p.project]?' (added)':'')+'</option>';}).join('');
   document.getElementById('addContainer').innerHTML='<div class="overlay"><div class="slabel" style="font-size:11px;font-weight:500;letter-spacing:.07em;color:#aaa;text-transform:uppercase;margin-bottom:.875rem">New entry</div><div class="rowfull"><div class="fld"><label>Project</label><select id="newProj"><option value="">Select a project...</option>'+(mine.length?'<optgroup label="\u2014 Your projects \u2014">'+myOpts+'</optgroup>':'')+'<optgroup label="\u2014 All other projects \u2014">'+otherOpts+'</optgroup></select></div></div><div class="rowfull"><div class="fld"><label>Actual hours</label><input type="number" id="newHrs" placeholder="e.g. 4.5" min="0.5" max="80" step="0.5"/></div></div><div class="rowfull"><div class="fld"><label>Notes <span style="font-size:11px;color:#ccc;font-weight:400">\u2014 optional</span></label><textarea id="newNotes" placeholder="What did you work on?"></textarea></div></div><div class="oacts"><button class="btnok" onclick="addEntry()">Add entry</button><button class="btncancel" onclick="hideAdd()">Cancel</button></div></div>';
@@ -653,8 +657,12 @@ function showAdd(){
   if(addOpen)return; addOpen=true;
   document.getElementById('btnAdd').style.display='none';
   var owner=currentOwner,mine=PERSON_PROJECTS[owner]||[],others=[],used=getUsed();
+  // Use active projects from sheet if loaded, otherwise fall back to hardcoded list
+  var activeList=ALL_LOADED_PROJECTS.length?ALL_LOADED_PROJECTS:ALL_PROJECTS.map(function(p){return p.project;});
   var mineSet={};mine.forEach(function(p){mineSet[p]=1;});
-  ALL_PROJECTS.forEach(function(p){if(!mineSet[p.project])others.push(p);});
+  // Filter mine to active only
+  mine=mine.filter(function(p){return activeList.indexOf(p)!==-1;});
+  activeList.forEach(function(p){if(!mineSet[p]&&p!=='Other Time')others.push({project:p,account:ACCT_MAP[p]||''});});
   var myOpts=mine.map(function(p){return '<option value="'+p+'"'+(used[p]?' disabled':'')+'>'+p+(used[p]?' (added)':'')+'</option>';}).join('');
   var otherOpts=others.map(function(p){return '<option value="'+p.project+'"'+(used[p.project]?' disabled':'')+'>'+p.project+(used[p.project]?' (added)':'')+'</option>';}).join('');
   document.getElementById('addContainer').innerHTML='<div class="overlay"><div class="slabel" style="font-size:11px;font-weight:500;letter-spacing:.07em;color:var(--g30);text-transform:uppercase;margin-bottom:.875rem">New entry</div><div class="rowfull"><div class="fld"><label>Project</label><select id="newProj"><option value="">Select a project...</option>'+(mine.length?'<optgroup label="— Your projects —">'+myOpts+'</optgroup>':'')+'<optgroup label="— All other projects —">'+otherOpts+'</optgroup></select></div></div><div class="rowfull"><div class="fld"><label>Actual hours</label><input type="number" id="newHrs" placeholder="e.g. 4.5" min="0.5" max="80" step="0.5"/></div></div><div class="rowfull"><div class="fld"><label>Notes — optional</label><textarea id="newNotes" placeholder="What did you work on?"></textarea></div></div><div class="oacts"><button class="btnok" onclick="addEntry()">Add entry</button><button class="btncancel" onclick="hideAdd()">Cancel</button></div></div>';
