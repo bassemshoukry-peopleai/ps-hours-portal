@@ -486,7 +486,7 @@ function renderEntries(){
           var hrsMatch=m.match(/,\s*([\d.]+)h\)$/);
           return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:var(--graphite-5);border:1px solid var(--graphite-10);border-radius:8px"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--graphite);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m+'</div></div><select id="ereassign3_'+i+'_'+mi+'" style="font-size:12px;padding:5px 8px;border:1px solid var(--graphite-10);border-radius:6px;font-family:inherit;background:#fff;min-width:160px;max-width:200px">'+projOpts3+'</select></div>';
         }).join('');
-        return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">'+e.project+'<span class="suggbadge">from calendar</span></div><div style="font-size:11px;color:var(--graphite-30);text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:8px">Assign each meeting</div>'+meetingRows3+'<div style="margin-bottom:8px"><label style="font-size:12px;color:var(--graphite-40);font-weight:500;display:block;margin-bottom:4px">Notes — optional</label><textarea style="font-size:13px;padding:7px 10px;border:1px solid var(--graphite-10);border-radius:8px;width:100%;font-family:inherit;resize:vertical;min-height:52px" id="enotes_'+i+'">'+e.notes+'</textarea></div><div style="display:flex;gap:8px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditingMatched('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove</button></div></div></div>';
+        return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">'+e.project+'<span class="suggbadge">from calendar</span></div><div style="font-size:11px;color:var(--graphite-30);text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:8px">Assign each meeting</div>'+meetingRows3+'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;padding:10px;background:var(--graphite-5);border:1px solid var(--graphite-10);border-radius:8px"><div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--graphite);margin-bottom:2px">Additional hours</div><div style="font-size:11px;color:var(--graphite-30)">Add time beyond detected meetings</div></div><input type="number" id="eextrahrs_'+i+'" value="0" min="0" max="40" step="0.25" style="font-size:14px;padding:6px 10px;border:1px solid var(--graphite-10);border-radius:8px;width:80px;font-family:inherit"/></div><div style="margin-bottom:8px"><label style="font-size:12px;color:var(--graphite-40);font-weight:500;display:block;margin-bottom:4px">Notes — optional</label><textarea style="font-size:13px;padding:7px 10px;border:1px solid var(--graphite-10);border-radius:8px;width:100%;font-family:inherit;resize:vertical;min-height:52px" id="enotes_'+i+'">'+e.notes+'</textarea></div><div style="display:flex;gap:8px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditingMatched('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove</button></div></div></div>';
       }
 
       // Collapsed: calendar suggestion
@@ -545,6 +545,11 @@ function doneEditingMatched(i){
       keepMeetings.push(m);
     }
   });
+
+  // Add any extra hours to the kept project
+  var extraEl=document.getElementById('eextrahrs_'+i);
+  var extraHrs=extraEl?parseFloat(extraEl.value)||0:0;
+  keepHours+=extraHrs;
 
   // Update or remove the original entry
   if(keepHours>0){
