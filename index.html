@@ -186,7 +186,10 @@
         <button class="btncal" id="btnCal" onclick="loadCalendar()">Suggest from calendar</button>
       </div>
       <div id="statusMsg" style="display:none"></div>
-      <button class="btnsubmit" id="btnSubmit" onclick="doSubmit()">Submit to Google Sheet</button>
+      <div style="display:flex;gap:8px;margin-bottom:0">
+        <button onclick="saveDraft()" style="padding:12px 18px;font-size:13px;font-weight:500;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap">Save draft</button>
+        <button class="btnsubmit" id="btnSubmit" onclick="doSubmit()" style="flex:1">Submit to Google Sheet</button>
+      </div>
     </div>
 
     <div class="tab-pane" id="paneLastWeek">
@@ -218,6 +221,36 @@ var HAS_TRACKER = {"Kaisha Fox":1,"Frank Shawn":1,"Williams Santana":1,"Justin M
 
 var entries=[], addOpen=false, lwLoaded=false, currentOwner='', calToken=sessionStorage.getItem('calToken')||null;
 var lastWeekMap={}; // project -> last week hours
+
+function getDraftKey(){
+  var weekVal=document.getElementById('weekDate').value;
+  return 'psdraft_'+currentOwner+'_'+weekVal;
+}
+function saveDraft(){
+  if(!currentOwner||!entries.length) return;
+  try{
+    localStorage.setItem(getDraftKey(), JSON.stringify(entries));
+    showStatus('Draft saved — you can safely close this tab.','ok');
+  } catch(e){}
+}
+function loadDraft(){
+  if(!currentOwner) return;
+  try{
+    var key=getDraftKey();
+    var saved=localStorage.getItem(key);
+    if(saved){
+      var parsed=JSON.parse(saved);
+      if(parsed&&parsed.length){
+        entries=parsed.map(function(e){return Object.assign({},e,{editing:false});});
+        renderEntries();
+        showStatus('Draft restored — '+entries.length+' entr'+(entries.length>1?'ies':'y')+' loaded from your last session.','warn');
+      }
+    }
+  } catch(e){}
+}
+function clearDraft(){
+  try{ localStorage.removeItem(getDraftKey()); } catch(e){}
+}
 
 function getMonday(d){var dt=new Date(d),day=dt.getDay();dt.setDate(dt.getDate()-day+(day===0?-6:1));return dt;}
 function fmtD(d){return(d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(-2);}
@@ -260,8 +293,8 @@ function onOwnerChange(){
     lastWeekMap={};
     fetch(WEBHOOK_URL+'?action=lastweekmap&owner='+encodeURIComponent(owner))
       .then(function(r){return r.json();})
-      .then(function(map){ lastWeekMap=map||{}; renderEntries(); })
-      .catch(function(){}); // silent fail - delta just won't show
+      .then(function(map){ lastWeekMap=map||{}; loadDraft(); })
+      .catch(function(){ loadDraft(); }); // load draft even if delta fails
   }
 }
 
@@ -807,6 +840,7 @@ function doSubmit(){
     .then(function(r){return r.json();})
     .then(function(result){
       if(result.status===200){
+        clearDraft();
         showStatus('\u2713 '+result.message+' Week of '+fmtD(getMonday(new Date(rawDate+'T12:00:00')))+', logged for '+owner+'.','ok');
         entries=[];lwLoaded=false;renderEntries();btn.textContent='Submit another week';
       } else{showStatus('Partial: '+result.message,'err');btn.textContent='Retry';}
