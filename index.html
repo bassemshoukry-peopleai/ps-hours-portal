@@ -729,7 +729,14 @@ function matchProject(titleLow, projects) {
 }
 
 function processCal(events){
-  var projects=ALL_LOADED_PROJECTS.length?ALL_LOADED_PROJECTS:ALL_PROJECTS.map(function(p){return p.project;});
+  // Build project list: owner's projects first, then rest of active projects
+  var ownerProjects = PERSON_PROJECTS[currentOwner] || [];
+  var allProjects = ALL_LOADED_PROJECTS.length ? ALL_LOADED_PROJECTS : ALL_PROJECTS.map(function(p){return p.project;});
+  // Deduplicate: owner projects first, then remaining active projects not already in owner list
+  var ownerSet = {};
+  ownerProjects.forEach(function(p){ ownerSet[p]=1; });
+  var remainingProjects = allProjects.filter(function(p){ return !ownerSet[p]; });
+  var projects = ownerProjects.concat(remainingProjects);
   var projectMap={};
   events.forEach(function(ev){
     if(!ev.start||!ev.start.dateTime)return;
