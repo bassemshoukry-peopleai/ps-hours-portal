@@ -795,7 +795,27 @@ function processCal(events){
     if(!ev.start||!ev.start.dateTime)return;
     // Skip private/confidential events
     if(ev.visibility==='private'||ev.visibility==='confidential')return;
+    // Skip declined events
     if(ev.attendees){for(var i=0;i<ev.attendees.length;i++){if(ev.attendees[i].self&&ev.attendees[i].responseStatus==='declined')return;}}
+    // Skip personal events: solo events (no other attendees) with personal keywords
+    var PERSONAL_KEYWORDS=['doctor','dentist','dr.','dr ','physician','therapy','therapist',
+      'chiropractor','optometrist','eye exam','blood test','lab appt','medical','surgery',
+      'kid pickup','school pickup','daycare','kids','child','son','daughter','family',
+      'haircut','hair appt','barber','nail appt','nails',
+      'vet','pet','dog walk',
+      'financial advisor','accountant','tax appt','bank appt',
+      'padel','soccer','tennis','gym','yoga','workout','crossfit','pilates','spin class',
+      'airport','flight','travel','hotel','vacation','holiday','pto','day off','ooo','out of office',
+      'drive','commute','car service','oil change','dmv',
+      'lunch','dinner','breakfast','coffee catch','birthday','anniversary','wedding','funeral',
+      'personal','private'];
+    var titleLow=(ev.summary||'').toLowerCase();
+    var isSolo=!ev.attendees||ev.attendees.length<=1;
+    if(isSolo){
+      for(var pi=0;pi<PERSONAL_KEYWORDS.length;pi++){
+        if(titleLow.indexOf(PERSONAL_KEYWORDS[pi])!==-1) return;
+      }
+    }
     var start=new Date(ev.start.dateTime),end=new Date(ev.end.dateTime);
     var mins=(end-start)/60000;
     if(mins<5)return;
