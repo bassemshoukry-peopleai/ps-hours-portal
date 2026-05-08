@@ -478,7 +478,7 @@ function renderEntries(){
           var meetingRows=e.meetings.map(function(m,mi){
             return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:var(--graphite-5);border:1px solid var(--graphite-10);border-radius:8px"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--graphite);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m+'</div></div><select id="ereassign_'+i+'_'+mi+'" style="font-size:12px;padding:5px 8px;border:1px solid var(--graphite-10);border-radius:6px;font-family:inherit;background:#fff;min-width:160px;max-width:200px">'+projOpts+'</select></div>';
           }).join('');
-          return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">Other Time<span class="suggbadge">from calendar</span></div><div style="font-size:11px;color:var(--graphite-30);text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:8px">Assign each meeting to a project</div>'+meetingRows+'<div style="display:flex;gap:8px;margin-top:4px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditingOther('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove all</button></div></div></div>';
+          return '<div class="'+cls+'"><div class="einfo" style="width:100%"><div class="eproj" style="margin-bottom:8px">Other Time<span class="suggbadge">from calendar</span></div><div style="font-size:11px;color:var(--graphite-30);text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:8px">Assign each meeting to a project</div>'+meetingRows+'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;padding:10px;background:var(--graphite-5);border:1px solid var(--graphite-10);border-radius:8px"><div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--graphite);margin-bottom:2px">Additional hours</div><div style="font-size:11px;color:var(--graphite-30)">Add time beyond detected meetings</div></div><input type="number" id="eotherextrahrs_'+i+'" value="0" min="0" max="40" step="0.25" style="font-size:14px;padding:6px 10px;border:1px solid var(--graphite-10);border-radius:8px;width:80px;font-family:inherit"/></div><div style="margin-bottom:8px"><label style="font-size:12px;color:var(--graphite-40);font-weight:500;display:block;margin-bottom:4px">Notes — optional</label><textarea style="font-size:13px;padding:7px 10px;border:1px solid var(--graphite-10);border-radius:8px;width:100%;font-family:inherit;resize:vertical;min-height:52px" id="eothernotes_'+i+'"></textarea></div><div style="display:flex;gap:8px;margin-top:4px"><button class="btnok" style="padding:7px 14px;font-size:13px" onclick="doneEditingOther('+i+')">Done</button><button class="btncancel" onclick="removeEntry('+i+')">Remove all</button></div></div></div>';
         }
         var projList3=ALL_LOADED_PROJECTS.length?ALL_LOADED_PROJECTS:ALL_PROJECTS.map(function(p){return p.project;});
         var projOpts3='<option value="" selected>Keep as: '+e.project+'</option><option value="__ignore__">— Ignore (exclude)</option>'+projList3.filter(function(p){return p!==e.project;}).map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
@@ -627,6 +627,10 @@ function doneEditingOther(i){
     if(existing!==-1){ entries[existing].hours=Math.round((entries[existing].hours+hrs)*4)/4; }
     else { entries.push({project:proj,account:ACCT_MAP[proj]||'',hours:hrs,notes:d.meetings.join('; '),meetings:d.meetings,suggested:true,editing:false}); }
   });
+  var otherExtraEl=document.getElementById('eotherextrahrs_'+i);
+  var otherExtraHrs=otherExtraEl?parseFloat(otherExtraEl.value)||0:0;
+  otherHours+=otherExtraHrs;
+
   if(otherHours>0){
     var remainMeetings=[];
     e.meetings.forEach(function(m,mi){
@@ -635,7 +639,9 @@ function doneEditingOther(i){
       if(proj==='__ignore__') return;
       if(!proj||proj==='Other Time') remainMeetings.push(m);
     });
-    entries.push({project:'Other Time',account:'Internal',hours:Math.round(otherHours*4)/4,notes:'',meetings:remainMeetings,suggested:true,editing:false,isOther:true});
+    var otherNotesEl=document.getElementById('eothernotes_'+i);
+    var otherNotes=otherNotesEl?otherNotesEl.value.trim():'';
+    entries.push({project:'Other Time',account:'Internal',hours:Math.round(otherHours*4)/4,notes:otherNotes,meetings:remainMeetings,suggested:true,editing:false,isOther:true});
   }
   renderEntries();
 }
