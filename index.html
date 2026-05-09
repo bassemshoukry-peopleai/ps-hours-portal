@@ -188,6 +188,7 @@
       <div id="statusMsg" style="display:none"></div>
       <div style="display:flex;gap:8px;margin-bottom:0">
         <button onclick="saveDraft()" style="padding:12px 18px;font-size:13px;font-weight:500;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap">Save draft</button>
+        <button onclick="if(confirm('Clear saved draft and start over?')){clearDraft();entries=[];renderEntries();showStatus('Draft cleared.','warn');}" style="padding:12px 14px;font-size:13px;font-weight:500;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.25);border-radius:6px;color:rgba(255,255,255,0.6);cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap">Clear</button>
         <button class="btnsubmit" id="btnSubmit" onclick="doSubmit()" style="flex:1">Submit to Google Sheet</button>
       </div>
     </div>
