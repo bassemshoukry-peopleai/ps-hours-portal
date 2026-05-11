@@ -859,17 +859,10 @@ function doSubmit(){
   var payload=entries.map(function(e){return{project:e.project,account:e.account,owner:owner,weekISO:weekISO,hours:e.hours,notes:e.notes||''};});
   // Use no-cors fetch — Apps Script doesn't support CORS on POST from external origins
   // Send each entry as a separate GET request which Apps Script handles reliably
-  var promises=payload.map(function(entry){
-    var params='?action=submit'
-      +'&project='+encodeURIComponent(entry.project)
-      +'&owner='+encodeURIComponent(entry.owner)
-      +'&weekISO='+encodeURIComponent(entry.weekISO)
-      +'&hours='+encodeURIComponent(entry.hours)
-      +'&notes='+encodeURIComponent(entry.notes||'');
-    return fetch(WEBHOOK_URL+params).then(function(r){return r.json();});
-  });
-  Promise.all(promises)
-    .then(function(results){
+  // Submit sequentially to avoid race conditions when adding new project rows
+  var results=[];
+  function submitNext(i){
+    if(i>=payload.length){
       var allOk=results.every(function(r){return r.status===200;});
       var msgs=results.map(function(r){return r.message||'';}).join('; ');
       if(allOk){
@@ -880,8 +873,27 @@ function doSubmit(){
         showStatus('Partial: '+msgs,'err');btn.textContent='Retry';
       }
       btn.disabled=false;
-    })
-    .catch(function(err){showStatus('Submission failed: '+err.message,'err');btn.textContent='Retry';btn.disabled=false;});
+      return;
+    }
+    var entry=payload[i];
+    var params='?action=submit'
+      +'&project='+encodeURIComponent(entry.project)
+      +'&owner='+encodeURIComponent(entry.owner)
+      +'&weekISO='+encodeURIComponent(entry.weekISO)
+      +'&hours='+encodeURIComponent(entry.hours)
+      +'&notes='+encodeURIComponent(entry.notes||'');
+    fetch(WEBHOOK_URL+params)
+      .then(function(r){return r.json();})
+      .then(function(result){
+        results.push(result);
+        submitNext(i+1);
+      })
+      .catch(function(err){
+        results.push({status:500,message:'Failed: '+err.message});
+        submitNext(i+1);
+      });
+  }
+  submitNext(0);
 }
 
 function showStatus(msg,type){
