@@ -944,8 +944,12 @@ function doSubmit(){
         payload.forEach(function(newE){
           var idx=-1;
           mergedEntries.forEach(function(e,i){ if(e.project===newE.project) idx=i; });
-          if(idx!==-1) mergedEntries[idx]=newE; // update hours
-          else mergedEntries.push(newE); // add new
+          if(idx!==-1){
+            // Add on top of existing hours
+            mergedEntries[idx]=Object.assign({},mergedEntries[idx],{hours:Math.round((mergedEntries[idx].hours+newE.hours)*4)/4});
+          } else {
+            mergedEntries.push(newE);
+          }
         });
         lastSubmission={
           owner: owner,
