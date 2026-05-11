@@ -936,12 +936,23 @@ function doSubmit(){
     .then(function(result){
       if(result.status===200){
         clearDraft();
+        // Merge with existing submission for this week if any
+        var existingKey='pssubmitted_'+owner+'_'+weekISO;
+        var existing=null;
+        try{ var ex=localStorage.getItem(existingKey); if(ex){ var parsed=JSON.parse(ex); if(isThisWeek(parsed.savedAt)) existing=parsed; } } catch(e){}
+        var mergedEntries=existing?existing.entries.slice():[];
+        payload.forEach(function(newE){
+          var idx=-1;
+          mergedEntries.forEach(function(e,i){ if(e.project===newE.project) idx=i; });
+          if(idx!==-1) mergedEntries[idx]=newE; // update hours
+          else mergedEntries.push(newE); // add new
+        });
         lastSubmission={
           owner: owner,
           weekLabel: fmtD(getMonday(new Date(rawDate+'T12:00:00'))),
           weekISO: weekISO,
-          entries: payload.slice(),
-          total: payload.reduce(function(s,e){return s+e.hours;},0)
+          entries: mergedEntries,
+          total: mergedEntries.reduce(function(s,e){return s+e.hours;},0)
         };
         try{ localStorage.setItem('pssubmitted_'+owner+'_'+weekISO, JSON.stringify(Object.assign({},lastSubmission,{savedAt:Date.now()}))); } catch(e){}
         renderSubmitted();
