@@ -423,7 +423,14 @@ function matchProject(titleLow, projects) {
 }
 
 function processCal(events){
-  var projects = ALL_LOADED_PROJECTS.length ? ALL_LOADED_PROJECTS : ALL_PROJECTS.map(function(p){return p.project;});
+  // Active projects only, owner's projects prioritized first
+  var allProjects = ALL_LOADED_PROJECTS.length ? ALL_LOADED_PROJECTS : ALL_PROJECTS.map(function(p){return p.project;});
+  var activeSet = {};
+  allProjects.forEach(function(p){ activeSet[p]=1; });
+  var ownerProjects = (PERSON_PROJECTS[currentOwner] || []).filter(function(p){ return activeSet[p]; });
+  var ownerSet = {};
+  ownerProjects.forEach(function(p){ ownerSet[p]=1; });
+  var projects = ownerProjects.concat(allProjects.filter(function(p){ return !ownerSet[p]; }));
   var projectMap={};
   events.forEach(function(ev){
     if(!ev.start||!ev.start.dateTime)return;
