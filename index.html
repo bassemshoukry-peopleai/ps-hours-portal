@@ -283,6 +283,15 @@ function updateBadge(){
   var v=document.getElementById('weekDate').value;
   if(!v)return;
   document.getElementById('wbadge').textContent='Week of '+fmtD(getMonday(new Date(v+'T12:00:00')));
+  // Restore submitted section for new week if exists
+  if(currentOwner){
+    try{
+      var weekISO3=fmtISO(getMonday(new Date(v+'T12:00:00')));
+      var saved=localStorage.getItem('pssubmitted_'+currentOwner+'_'+weekISO3);
+      if(saved){ lastSubmission=JSON.parse(saved); renderSubmitted(); }
+      else { lastSubmission=null; document.getElementById('submittedSection').style.display='none'; }
+    } catch(e){}
+  }
 }
 
 function onOwnerChange(){
@@ -304,10 +313,17 @@ function onOwnerChange(){
   if(owner){
     switchTab('log');
     lastWeekMap={};
+    // Restore any previous submission for this owner+week
+    try{
+      var weekISO2=fmtISO(getMonday(new Date(document.getElementById('weekDate').value+'T12:00:00')));
+      var saved=localStorage.getItem('pssubmitted_'+owner+'_'+weekISO2);
+      if(saved){ lastSubmission=JSON.parse(saved); renderSubmitted(); }
+      else { lastSubmission=null; document.getElementById('submittedSection').style.display='none'; }
+    } catch(e){}
     fetch(WEBHOOK_URL+'?action=lastweekmap&owner='+encodeURIComponent(owner))
       .then(function(r){return r.json();})
       .then(function(map){ lastWeekMap=map||{}; loadDraft(); })
-      .catch(function(){ loadDraft(); }); // load draft even if delta fails
+      .catch(function(){ loadDraft(); });
   }
 }
 
@@ -912,9 +928,11 @@ function doSubmit(){
         lastSubmission={
           owner: owner,
           weekLabel: fmtD(getMonday(new Date(rawDate+'T12:00:00'))),
+          weekISO: weekISO,
           entries: payload.slice(),
           total: payload.reduce(function(s,e){return s+e.hours;},0)
         };
+        try{ localStorage.setItem('pssubmitted_'+owner+'_'+weekISO, JSON.stringify(lastSubmission)); } catch(e){}
         renderSubmitted();
         showStatus('✓ Submitted! Week of '+fmtD(getMonday(new Date(rawDate+'T12:00:00')))+', logged for '+owner+'.','ok');
         entries=[];lwLoaded=false;renderEntries();btn.textContent='Submit another week';
