@@ -225,6 +225,17 @@ var entries=[], addOpen=false, lwLoaded=false, currentOwner='', calToken=session
 var lastWeekMap={}; // project -> last week hours
 var lastSubmission=null; // {owner, weekLabel, entries, total}
 
+function isThisWeek(ts){
+  // Returns true if timestamp is within the current Mon-Sun week
+  var now=new Date();
+  var day=now.getDay();
+  var monday=new Date(now);
+  monday.setDate(now.getDate()-day+(day===0?-6:1));
+  monday.setHours(0,0,0,0);
+  var sunday=new Date(monday);
+  sunday.setDate(monday.getDate()+7); // midnight next Monday = end of Sunday
+  return ts>=monday.getTime() && ts<sunday.getTime();
+}
 function getDraftKey(){
   var weekVal=document.getElementById('weekDate').value;
   return 'psdraft_'+currentOwner+'_'+weekVal;
@@ -288,7 +299,7 @@ function updateBadge(){
     try{
       var weekISO3=fmtISO(getMonday(new Date(v+'T12:00:00')));
       var saved=localStorage.getItem('pssubmitted_'+currentOwner+'_'+weekISO3);
-      if(saved){ lastSubmission=JSON.parse(saved); renderSubmitted(); }
+      if(saved){ var parsed=JSON.parse(saved); if(!parsed.savedAt||isThisWeek(parsed.savedAt)){ lastSubmission=parsed; renderSubmitted(); } else { localStorage.removeItem('pssubmitted_'+currentOwner+'_'+weekISO3); } }
       else { lastSubmission=null; document.getElementById('submittedSection').style.display='none'; }
     } catch(e){}
   }
@@ -317,7 +328,7 @@ function onOwnerChange(){
     try{
       var weekISO2=fmtISO(getMonday(new Date(document.getElementById('weekDate').value+'T12:00:00')));
       var saved=localStorage.getItem('pssubmitted_'+owner+'_'+weekISO2);
-      if(saved){ lastSubmission=JSON.parse(saved); renderSubmitted(); }
+      if(saved){ var parsed=JSON.parse(saved); if(!parsed.savedAt||isThisWeek(parsed.savedAt)){ lastSubmission=parsed; renderSubmitted(); } else { localStorage.removeItem('pssubmitted_'+owner+'_'+weekISO2); } }
       else { lastSubmission=null; document.getElementById('submittedSection').style.display='none'; }
     } catch(e){}
     fetch(WEBHOOK_URL+'?action=lastweekmap&owner='+encodeURIComponent(owner))
@@ -932,7 +943,7 @@ function doSubmit(){
           entries: payload.slice(),
           total: payload.reduce(function(s,e){return s+e.hours;},0)
         };
-        try{ localStorage.setItem('pssubmitted_'+owner+'_'+weekISO, JSON.stringify(lastSubmission)); } catch(e){}
+        try{ localStorage.setItem('pssubmitted_'+owner+'_'+weekISO, JSON.stringify(Object.assign({},lastSubmission,{savedAt:Date.now()}))); } catch(e){}
         renderSubmitted();
         showStatus('✓ Submitted! Week of '+fmtD(getMonday(new Date(rawDate+'T12:00:00')))+', logged for '+owner+'.','ok');
         entries=[];lwLoaded=false;renderEntries();btn.textContent='Submit another week';
