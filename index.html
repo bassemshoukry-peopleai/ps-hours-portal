@@ -186,6 +186,7 @@
         <button class="btncal" id="btnCal" onclick="loadCalendar()">Suggest from calendar</button>
       </div>
       <div id="statusMsg" style="display:none"></div>
+      <div id="submittedSection" style="display:none;margin-top:1.5rem"></div>
       <div style="display:flex;gap:8px;margin-bottom:0">
         <button onclick="saveDraft()" style="padding:12px 18px;font-size:13px;font-weight:500;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap">Save draft</button>
         <button onclick="if(confirm('Clear saved draft and start over?')){clearDraft();entries=[];renderEntries();showStatus('Draft cleared.','warn');}" style="padding:12px 14px;font-size:13px;font-weight:500;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.25);border-radius:6px;color:rgba(255,255,255,0.6);cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap">Clear</button>
@@ -222,6 +223,7 @@ var HAS_TRACKER = {"Kaisha Fox":1,"Frank Shawn":1,"Williams Santana":1,"Justin M
 
 var entries=[], addOpen=false, lwLoaded=false, currentOwner='', calToken=sessionStorage.getItem('calToken')||null;
 var lastWeekMap={}; // project -> last week hours
+var lastSubmission=null; // {owner, weekLabel, entries, total}
 
 function getDraftKey(){
   var weekVal=document.getElementById('weekDate').value;
@@ -866,6 +868,28 @@ function processCal(events){
   else showStatus('Added '+added+' suggestion'+(added>1?'s':'')+' from calendar. Tap each to review.','ok');
 }
 
+function renderSubmitted(){
+  var el=document.getElementById('submittedSection');
+  if(!el||!lastSubmission) return;
+  var s=lastSubmission;
+  var rows=s.entries.map(function(e){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:6px;background:rgba(255,255,255,0.97);border:1px solid var(--graphite-10);margin-bottom:6px">'
+      +'<span style="font-size:13px;font-weight:500;color:var(--graphite)">'+e.project+'</span>'
+      +'<span style="font-family:\'Chivo Mono\',monospace;font-size:13px;color:var(--graphite)">'+e.hours+'h</span>'
+      +'</div>';
+  }).join('');
+  var total='<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-radius:6px;background:#C05527;margin-top:4px">'
+    +'<span style="font-size:13px;font-weight:600;color:#fff">Total submitted</span>'
+    +'<span style="font-family:\'Chivo Mono\',monospace;font-size:13px;font-weight:600;color:#fff">'+Math.round(s.total*4)/4+'h</span>'
+    +'</div>';
+  el.innerHTML='<div style="margin-top:0.5rem">'
+    +'<div style="font-family:\'Chivo Mono\',monospace;font-size:10px;font-weight:500;letter-spacing:.12em;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:.75rem">'
+    +'Submitted — Week of '+s.weekLabel+' — '+s.owner+'</div>'
+    +rows+total
+    +'</div>';
+  el.style.display='block';
+}
+
 function doSubmit(){
   var owner=document.getElementById('ownerSel').value;
   if(!owner){alert('Please select your name.');return;}
@@ -885,6 +909,13 @@ function doSubmit(){
     .then(function(result){
       if(result.status===200){
         clearDraft();
+        lastSubmission={
+          owner: owner,
+          weekLabel: fmtD(getMonday(new Date(rawDate+'T12:00:00'))),
+          entries: payload.slice(),
+          total: payload.reduce(function(s,e){return s+e.hours;},0)
+        };
+        renderSubmitted();
         showStatus('✓ Submitted! Week of '+fmtD(getMonday(new Date(rawDate+'T12:00:00')))+', logged for '+owner+'.','ok');
         entries=[];lwLoaded=false;renderEntries();btn.textContent='Submit another week';
       } else {
