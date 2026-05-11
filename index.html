@@ -784,9 +784,11 @@ function matchProject(titleLow, projects) {
 
 function processCal(events){
   // Build project list: owner's projects first, then rest of active projects
-  var ownerProjects = PERSON_PROJECTS[currentOwner] || [];
   var allProjects = ALL_LOADED_PROJECTS.length ? ALL_LOADED_PROJECTS : ALL_PROJECTS.map(function(p){return p.project;});
-  // Deduplicate: owner projects first, then remaining active projects not already in owner list
+  var activeSet = {};
+  allProjects.forEach(function(p){ activeSet[p]=1; });
+  // Owner projects filtered to active only, then remaining active projects
+  var ownerProjects = (PERSON_PROJECTS[currentOwner] || []).filter(function(p){ return activeSet[p]; });
   var ownerSet = {};
   ownerProjects.forEach(function(p){ ownerSet[p]=1; });
   var remainingProjects = allProjects.filter(function(p){ return !ownerSet[p]; });
