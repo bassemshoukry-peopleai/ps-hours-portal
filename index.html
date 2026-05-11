@@ -856,15 +856,29 @@ function doSubmit(){
   var btn=document.getElementById('btnSubmit');
   btn.disabled=true; btn.textContent='Submitting...';
   showStatus('Writing to Google Sheet...','load');
-  var payload={entries:entries.map(function(e){return{project:e.project,account:e.account,owner:owner,weekISO:weekISO,hours:e.hours,notes:e.notes||''};})};
-  fetch(WEBHOOK_URL,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}})
-    .then(function(r){return r.json();})
-    .then(function(result){
-      if(result.status===200){
+  var payload=entries.map(function(e){return{project:e.project,account:e.account,owner:owner,weekISO:weekISO,hours:e.hours,notes:e.notes||''};});
+  // Use no-cors fetch — Apps Script doesn't support CORS on POST from external origins
+  // Send each entry as a separate GET request which Apps Script handles reliably
+  var promises=payload.map(function(entry){
+    var params='?action=submit'
+      +'&project='+encodeURIComponent(entry.project)
+      +'&owner='+encodeURIComponent(entry.owner)
+      +'&weekISO='+encodeURIComponent(entry.weekISO)
+      +'&hours='+encodeURIComponent(entry.hours)
+      +'&notes='+encodeURIComponent(entry.notes||'');
+    return fetch(WEBHOOK_URL+params).then(function(r){return r.json();});
+  });
+  Promise.all(promises)
+    .then(function(results){
+      var allOk=results.every(function(r){return r.status===200;});
+      var msgs=results.map(function(r){return r.message||'';}).join('; ');
+      if(allOk){
         clearDraft();
-        showStatus('\u2713 '+result.message+' Week of '+fmtD(getMonday(new Date(rawDate+'T12:00:00')))+', logged for '+owner+'.','ok');
+        showStatus('✓ Submitted! Week of '+fmtD(getMonday(new Date(rawDate+'T12:00:00')))+', logged for '+owner+'.','ok');
         entries=[];lwLoaded=false;renderEntries();btn.textContent='Submit another week';
-      } else{showStatus('Partial: '+result.message,'err');btn.textContent='Retry';}
+      } else {
+        showStatus('Partial: '+msgs,'err');btn.textContent='Retry';
+      }
       btn.disabled=false;
     })
     .catch(function(err){showStatus('Submission failed: '+err.message,'err');btn.textContent='Retry';btn.disabled=false;});
